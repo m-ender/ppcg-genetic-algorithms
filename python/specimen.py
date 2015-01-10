@@ -1,7 +1,8 @@
 class Specimen(object):
-    def __init__(self, player, dna):
+    def __init__(self, player, dna, turn):
         self.player = player
         self.dna = dna
+        self.birth = turn
 
     def __getitem__(self, item):
         return self.bit_at(item)

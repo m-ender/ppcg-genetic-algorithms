@@ -1,30 +1,33 @@
-import coordinates
 
 class Trap(object):
-    def __init__(self, board):
+    def __init__(self, board, direction, color):
         self.board = board
+        self.direction = direction
+        self.color = color
 
     def turn(self, coordinates):
         pass
 
-class DeathTrap(Trap):
-    def __init__(self, board, direction):
-        Trap.__init__(self, board)
-        self.direction = direction
+    def moved_to(self, coordinates, origin):
+        pass
 
+class DeathTrap(Trap):
     def turn(self, coordinates):
-        self.board.specimens[coordinates+self.direction] = []
+        self.board.specimens[coordinates] = []
 
 
 class TeleportationTrap(Trap):
-    def __init__(self, board, direction):
-        Trap.__init__(self, board)
-        self.direction = direction
+    def moved_to(self, coordinates, origin):
+        self.board.specimens[coordinates+self.direction].extend(
+            self.board.specimens[coordinates])
+        self.board.specimens[coordinates] = []
 
-    def turn(self, coordinates):
-        self.board.specimens[coordinates].extend(
-            self.board.specimens[coordinates+self.direction])
+
+class WallTrap(Trap):
+    def moved_to(self, coordinates, origin):
+        self.board.specimens[origin].extend(
+            self.board.specimens[coordinates])
         self.board.specimens[coordinates+self.direction] = []
 
 
-trap_types = DeathTrap, TeleportationTrap
+trap_types = DeathTrap, TeleportationTrap, WallTrap
