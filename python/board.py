@@ -1,4 +1,3 @@
-import trap as t
 from random import Random
 
 class Board(object):

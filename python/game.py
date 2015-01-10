@@ -24,6 +24,8 @@ NUMBER_OF_TURNS = 100000
 
 INITIAL_SPECIMENS = 50
 
+REPRODUCTION_RATE = 1
+
 DNA_LENGTH = 50
 LIFE_SPAN = 200
 
@@ -53,10 +55,7 @@ def initialize_board():
 
     #add specimens
     for __ in xrange(INITIAL_SPECIMENS):
-        board.add_specimen(Specimen(player, random.getrandbits(DNA_LENGTH), 0),
-                           coordinates.Coordinate(
-                               random.randrange(0, BOARD_WIDTH),
-                               0))
+        add_specimen(board, 0)
     #add traps
     for height in xrange(BOARD_HEIGHT):
         for width in xrange(BOARD_WIDTH):
@@ -82,12 +81,23 @@ def take_turn(board, turn_number):
     board.next_specimens.clear()
     return points
 
+
+def add_specimen(board, turn_number):
+    board.add_specimen(
+        Specimen(player, random.getrandbits(DNA_LENGTH), turn_number),
+        coordinates.Coordinate(random.randrange(0, BOARD_WIDTH), 0))
+
 if __name__ == "__main__":
     random = Random(SEED)
     player = Player()
     total_points = 0
+    reproduction_counter = 0
     for __ in xrange(NUMBER_OF_BOARDS):
         board = initialize_board()
         for turn_number in xrange(NUMBER_OF_TURNS):
+            reproduction_counter+=REPRODUCTION_RATE
+            while reproduction_counter > 1:
+                reproduction_counter -= 1
+                add_specimen(board, turn_number)
             total_points += take_turn(board, turn_number)
     print("Your bot got "+str(total_points)+" points")
