@@ -1,5 +1,6 @@
 import itertools
 
+
 class Coordinate():
     def __init__(self, x, y):
         self.x = x
@@ -12,7 +13,7 @@ class Coordinate():
         return Coordinate(self.x-other.x, self.y-other.y)
 
     def __hash__(self):
-        return hash((self.x,self.y))
+        return hash((self.x, self.y))
 
     def __eq__(self, other):
         return self.x == other.x and self.y == other.y

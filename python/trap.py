@@ -11,6 +11,7 @@ class Trap(object):
     def moved_to(self, coordinates, origin):
         pass
 
+
 class DeathTrap(Trap):
     def turn(self, coordinates):
         self.board.specimens[coordinates] = []

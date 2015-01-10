@@ -41,6 +41,8 @@ SEED = 13722829
 
 NUMBER_COLORS = 50  # needs to be bigger than 27
 
+random = Random(SEED)
+
 
 def initialize_board():
     board = Board(random.randrange(0, 100000000))
@@ -65,7 +67,7 @@ def initialize_board():
     return board
 
 
-def take_turn(board, turn_number):
+def take_turn(board, turn_number, player):
     points = 0
     for coordinate, specimens in board.specimens.items():
         for specimen in specimens:
@@ -84,20 +86,24 @@ def take_turn(board, turn_number):
 
 def add_specimen(board, turn_number):
     board.add_specimen(
-        Specimen(player, random.getrandbits(DNA_LENGTH), turn_number),
+        Specimen(random.getrandbits(DNA_LENGTH), turn_number),
         coordinates.Coordinate(random.randrange(0, BOARD_WIDTH), 0))
 
-if __name__ == "__main__":
-    random = Random(SEED)
+
+def run():
     player = Player()
     total_points = 0
     reproduction_counter = 0
     for __ in xrange(NUMBER_OF_BOARDS):
         board = initialize_board()
         for turn_number in xrange(NUMBER_OF_TURNS):
-            reproduction_counter+=REPRODUCTION_RATE
+            reproduction_counter += REPRODUCTION_RATE
             while reproduction_counter > 1:
                 reproduction_counter -= 1
                 add_specimen(board, turn_number)
-            total_points += take_turn(board, turn_number)
+            total_points += take_turn(board, turn_number, player)
     print("Your bot got "+str(total_points)+" points")
+
+
+if __name__ == "__main__":
+    run()

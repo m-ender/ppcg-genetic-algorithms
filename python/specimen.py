@@ -1,6 +1,5 @@
 class Specimen(object):
-    def __init__(self, player, dna, turn):
-        self.player = player
+    def __init__(self, dna, turn):
         self.dna = dna
         self.birth = turn
 
