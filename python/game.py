@@ -12,7 +12,7 @@ import coordinates
 if sys.version_info >= (3,):
     xrange = range
 
-NUMBER_OF_BOARDS = 20
+NUMBER_OF_BOARDS = 1
 BOARD_WIDTH = 50
 BOARD_HEIGHT = 200
 
@@ -94,11 +94,11 @@ def take_turn(board, turn_number, player):
     return points
 
 
-def breed(board):
+def breed(board, current_turn):
     total = 0
     for coordinate, specimens in board.specimens.items():
         total += (coordinate.y+1)*len(specimens)
-    specimen_positions = [random.randrange(total) for __ in xrange(NUM_PARENTS)]
+    specimen_positions = [random.randrange(total) for _ in xrange(NUM_PARENTS)]
     selected_specimens = []
     for coordinate, specimens in board.specimens.items():
         specimen_positions = [position-(coordinate.y+1)*len(specimens)
@@ -113,29 +113,44 @@ def breed(board):
         if len(selected_specimens) == NUM_PARENTS:
             break
     current_parent = random.choice(selected_specimens)
-    for bit in xrange(DNA_LENGTH):
+    new_dna = 0
+    for position in reversed(xrange(DNA_LENGTH)):
         if random.random() < DNA_CROSSOVER_RATE:
             current_parent = random.choice(selected_specimens)
-        current_parent.bit_at(bit)  #TODO: Need to add into a single integer
-    #TODO: Need to create specimen and board.add_specimen(...)
+        bit = current_parent.bit_at(position)
+        new_dna = (new_dna+bit) << 2
+    board.add_specimen(
+        Specimen(new_dna, current_turn),
+        coordinates.Coordinate(random.randrange(0, BOARD_WIDTH), 0))
 
+
+def check_for_life(board):
+    for coordinate, specimens in board.specimens.items():
+        if len(specimens) != 0:
+            return True
+    return False
 
 
 def run():
     player = Player()
     total_points = 0
     reproduction_counter = 0
-    for __ in xrange(NUMBER_OF_BOARDS):
+    for board_number in xrange(NUMBER_OF_BOARDS):
+        print("Running board #"+str(board_number+1)+"/"+str(NUMBER_OF_BOARDS))
         board = initialize_board()
         for turn_number in xrange(NUMBER_OF_TURNS):
             # Move
             total_points += take_turn(board, turn_number, player)
-            # TODO: End game if all specimens are dead
+            if not check_for_life(board):
+                break
             # Reproduce
             reproduction_counter += REPRODUCTION_RATE
             while reproduction_counter >= 1:
                 reproduction_counter -= 1
-                breed(board)
+                breed(board, turn_number)
+        #Score remaining specimen
+        for coordinate, specimen in board.specimens.items():
+            total_points += int(coordinate.y/BOARD_HEIGHT)*specimen
     print("Your bot got "+str(total_points)+" points")
 
 
