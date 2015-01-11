@@ -1,4 +1,4 @@
-import coordinates
+from coordinates import Coordinate
 
 
 class Player(object):
@@ -6,4 +6,4 @@ class Player(object):
         pass
 
     def take_turn(self, specimen, vision):
-        return coordinates.Up
+        return Coordinate(0,1)

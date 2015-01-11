@@ -21,11 +21,4 @@ class Coordinate():
     def __mul__(self, other):
         return Coordinate(self.x*other, self.y*other)
 
-cardinals = Up, Left, Down, Right = [Coordinate(1, 0), Coordinate(0, 1),
-                                     Coordinate(-1, 0), Coordinate(0, -1)]
-
-diagonals = itertools.permutations(cardinals, 2)
-
-directions = cardinals
-directions.extend(cardinals)
-directions.append(Coordinate(0,0))
+directions = [Coordinate(x,y) for x in (-1,0,1) for y in (-1,0,1)]
