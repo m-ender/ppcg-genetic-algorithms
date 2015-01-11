@@ -23,7 +23,10 @@ BOARD_WIDTH = coordinates.BOARD_WIDTH
 BOARD_HEIGHT = coordinates.BOARD_HEIGHT
 
 TRAP_FREQUENCY = .1
-NUMBER_COLORS = 50  # needs to be bigger than 27 to have enough for the board
+
+NUMBER_OF_SAFE_COLORS = 4
+NUMBER_OF_COLORS = sum([trap_type.max_traps for trap_type in trap.trap_types])\
+                   + NUMBER_OF_SAFE_COLORS
 
 NUMBER_OF_TURNS = 10000
 
@@ -49,17 +52,16 @@ random = Random(RANDOM_SEED)
 
 
 def initialize_board():
-    colors = [random.randrange(0, 100000000) for _ in xrange(16)]
-    board = Board(random.randrange(0, 100000000), colors[:4])
-    #Build each type of trap
-    colors = list(range(NUMBER_COLORS))
-    random.shuffle(colors)
-    #TODO find a better way to generate traps and map them to colors
-    all_traps = itertools.product(coordinates.directions, trap.trap_types)
-    traps = [trap_type(board, direction, color)
-             for (direction, trap_type), color in zip(all_traps, colors)]
-    board.unused_colors = \
-        colors[len(coordinates.directions)*len(trap.trap_types):]
+    colors = [random.randrange(0, 100000000) for _ in xrange(NUMBER_OF_COLORS)]
+    board = Board(random.randrange(0, 10000000), colors[NUMBER_OF_SAFE_COLORS:])
+    colors = colors[:NUMBER_OF_SAFE_COLORS]
+    traps = []
+    for trap_type in trap.trap_types:
+        used_traps = random.sample(trap_type.possible_directions,
+                                   trap_type.max_traps)
+        coloring = zip(used_traps, colors)
+        traps.extend([trap_type(board, direction, color)
+                      for direction, color in coloring])
 
     #add specimens
     for __ in xrange(INITIAL_SPECIMENS):
