@@ -24,8 +24,7 @@ class DeathTrap(Trap):
     possible_directions = coordinates.directions
 
     def turn(self, coordinate):
-        if coordinate in self.board.specimens:
-            del self.board.specimens[coordinate]
+        self.board.specimens.pop(coordinate, 0)
 
 
 class TeleportationTrap(Trap):
