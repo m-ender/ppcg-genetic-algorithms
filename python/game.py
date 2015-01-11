@@ -8,7 +8,11 @@ import sys
 import trap
 import itertools
 import coordinates
-from display import Display
+#Pick one of the following 3:
+from graphical_display import Display  #Requires pygame
+#from text_display import Display
+#from no_display import Display
+
 
 if sys.version_info >= (3,):
     xrange = range
@@ -48,6 +52,7 @@ def initialize_board():
     #Build each type of trap
     colors = list(range(NUMBER_COLORS))
     random.shuffle(colors)
+    #TODO find a better way to generate traps and map them to colors
     all_traps = itertools.product(coordinates.directions, trap.trap_types)
     traps = [trap_type(board, direction, color)
              for (direction, trap_type), color in zip(all_traps, colors)]
@@ -81,6 +86,7 @@ def take_turn(board, turn_number, player):
                 vision = [board.get_color(coordinate+offset)
                           for offset in VISION]
                 #move specimen
+                #TODO move the player to a random x position upon reaching top
                 direction = player.take_turn(specimen, vision)
                 new_location = coordinate+direction
                 if new_location in board.next_specimens:

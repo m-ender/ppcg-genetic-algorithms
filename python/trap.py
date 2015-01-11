@@ -18,6 +18,7 @@ class DeathTrap(Trap):
 
 
 class TeleportationTrap(Trap):
+    #TODO make this trap be 9x9
     def moved_to(self, coordinates, origin):
         if coordinates+self.direction in self.board.next_specimens:
             self.board.next_specimens[coordinates+self.direction].extend(
