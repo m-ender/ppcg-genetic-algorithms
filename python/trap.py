@@ -19,16 +19,24 @@ class DeathTrap(Trap):
 
 class TeleportationTrap(Trap):
     def moved_to(self, coordinates, origin):
-        self.board.specimens[coordinates+self.direction].extend(
-            self.board.specimens[coordinates])
-        self.board.specimens[coordinates] = []
+        if coordinates+self.direction in self.board.next_specimens:
+            self.board.next_specimens[coordinates+self.direction].extend(
+                self.board.next_specimens[coordinates])
+        else:
+            self.board.next_specimens[coordinates+self.direction] = \
+                self.board.next_specimens[coordinates]
+        self.board.next_specimens[coordinates] = []
 
 
 class WallTrap(Trap):
     def moved_to(self, coordinates, origin):
-        self.board.specimens[origin].extend(
-            self.board.specimens[coordinates])
-        self.board.specimens[coordinates+self.direction] = []
+        if origin in self.board.next_specimens:
+            self.board.next_specimens[origin].extend(
+                self.board.next_specimens[coordinates])
+        else:
+            self.board.next_specimens[origin] = \
+                self.board.next_specimens[coordinates]
+        self.board.next_specimens[coordinates] = []
 
 
 trap_types = DeathTrap, TeleportationTrap, WallTrap

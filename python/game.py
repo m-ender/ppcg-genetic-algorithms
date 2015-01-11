@@ -8,6 +8,7 @@ import sys
 import trap
 import itertools
 import coordinates
+from display import Display
 
 if sys.version_info >= (3,):
     xrange = range
@@ -54,7 +55,7 @@ def initialize_board():
     colors = list(range(NUMBER_COLORS))
     random.shuffle(colors)
     all_traps = itertools.product(coordinates.directions, trap.trap_types)
-    traps = [trap_type(direction, board, color)
+    traps = [trap_type(board, direction, color)
              for (direction, trap_type), color in zip(all_traps, colors)]
     board.unused_colors = \
         colors[len(coordinates.directions)*len(trap.trap_types):]
@@ -89,8 +90,9 @@ def take_turn(board, turn_number, player):
                     board.next_specimens[new_location].append(specimen)
                 else:
                     board.next_specimens[new_location] = [specimen]
-    board.specimens = board.next_specimens
-    board.next_specimens = {}
+                if new_location in board.traps:
+                    board.traps[new_location].moved_to(new_location, coordinate)
+    board.update_specimens()
     return points
 
 
@@ -101,6 +103,8 @@ def breed(board, current_turn):
     specimen_positions = [random.randrange(total) for _ in xrange(NUM_PARENTS)]
     selected_specimens = []
     for coordinate, specimens in board.specimens.items():
+        if not specimens:
+            continue
         specimen_positions = [position-(coordinate.y+1)*len(specimens)
                               for position in specimen_positions]
         to_remove_position = -1
@@ -135,12 +139,16 @@ def run():
     player = Player()
     total_points = 0
     reproduction_counter = 0
+    display = Display(BOARD_HEIGHT, BOARD_WIDTH)
     for board_number in xrange(NUMBER_OF_BOARDS):
         print("Running board #"+str(board_number+1)+"/"+str(NUMBER_OF_BOARDS))
         board = initialize_board()
         for turn_number in xrange(NUMBER_OF_TURNS):
             # Move
             total_points += take_turn(board, turn_number, player)
+            # Kill
+            for coordinate, trap in board.traps.items():
+                trap.turn(coordinate)
             if not check_for_life(board):
                 break
             # Reproduce
@@ -148,6 +156,10 @@ def run():
             while reproduction_counter >= 1:
                 reproduction_counter -= 1
                 breed(board, turn_number)
+            #Draw tiles
+            for coordinate in board.get_changed_cells():
+                display.draw_cell(coordinate, board)
+            display.update()
         #Score remaining specimen
         for coordinate, specimen in board.specimens.items():
             total_points += int(coordinate.y/BOARD_HEIGHT)*specimen
