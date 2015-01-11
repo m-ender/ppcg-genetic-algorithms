@@ -14,7 +14,8 @@ class Trap(object):
 
 class DeathTrap(Trap):
     def turn(self, coordinates):
-        del self.board.specimens[coordinates]
+        if coordinates in self.board.specimens:
+            del self.board.specimens[coordinates]
 
 
 class TeleportationTrap(Trap):

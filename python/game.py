@@ -148,7 +148,8 @@ def breed(board, current_turn):
 
 
 def check_for_life(board):
-    return len(board.specimens())
+    return len(board.specimens)
+
 
 def run():
     player = Player.PLAYER_TYPE()
