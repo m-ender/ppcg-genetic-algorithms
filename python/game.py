@@ -10,9 +10,9 @@ import itertools
 import coordinates
 import time
 #Pick one of the following 3:
-#from graphical_display import Display  #Requires pygame
+from graphical_display import Display  #Requires pygame
 #from text_display import Display
-from no_display import Display
+#from no_display import Display
 
 
 if sys.version_info >= (3,):
@@ -60,6 +60,7 @@ def initialize_board():
         used_traps = random.sample(trap_type.possible_directions,
                                    trap_type.max_traps)
         coloring = zip(used_traps, colors)
+        colors = colors[len(used_traps):]
         traps.extend([trap_type(board, direction, color)
                       for direction, color in coloring])
 
