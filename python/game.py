@@ -14,8 +14,8 @@ if sys.version_info >= (3,):
     xrange = range
 
 NUMBER_OF_BOARDS = 1
-BOARD_WIDTH = 50
-BOARD_HEIGHT = 200
+BOARD_WIDTH = coordinates.BOARD_WIDTH
+BOARD_HEIGHT = coordinates.BOARD_HEIGHT
 
 TRAP_FREQUENCY = .1
 
@@ -80,7 +80,7 @@ def take_turn(board, turn_number, player):
     for coordinate, specimens in board.specimens.items():
         for specimen in specimens:
             if turn_number == specimen.birth + SPECIMEN_LIFESPAN:
-                points += int(coordinate.y/BOARD_HEIGHT)
+                points += int(coordinate.real_y/BOARD_HEIGHT)
             else:
                 vision = [board.get_color(coordinate+offset)
                           for offset in VISION]
@@ -162,7 +162,7 @@ def run():
             display.update()
         #Score remaining specimen
         for coordinate, specimen in board.specimens.items():
-            total_points += int(coordinate.y/BOARD_HEIGHT)*specimen
+            total_points += int(coordinate.real_y/BOARD_HEIGHT)*specimen
     print("Your bot got "+str(total_points)+" points")
 
 
