@@ -1,4 +1,3 @@
-
 class Trap(object):
     def __init__(self, board, direction, color):
         self.board = board
@@ -10,6 +9,9 @@ class Trap(object):
 
     def moved_to(self, coordinates, origin):
         pass
+
+    def color(self):
+        return self.color
 
 
 class DeathTrap(Trap):

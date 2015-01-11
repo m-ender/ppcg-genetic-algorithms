@@ -2,12 +2,12 @@ from random import Random
 
 
 class Board(object):
-    def __init__(self, seed):
+    def __init__(self, seed, blank_colors):
         self.random = Random(seed)
         self.specimens = {}
         self.traps = {}
         self.next_specimens = {}
-        self.unused_colors = []
+        self.blank_cell = [ColoredSquare(blank_colors, self.random)]
         self.changed_cells = set()
 
     def add_specimen(self, specimen, coordinates):
@@ -22,10 +22,7 @@ class Board(object):
         self.changed_cells.add(coordinates)
 
     def get_color(self, coordinates):
-        if coordinates in self.traps:
-            return self.traps[coordinates].color
-        else:
-            return self.random.choice(self.unused_colors)
+        self.traps.get(coordinates, self.blank_cell)
 
     def get_changed_cells(self):
         changed = self.changed_cells
@@ -37,3 +34,12 @@ class Board(object):
         self.changed_cells.update(self.specimens.keys())
         self.specimens = self.next_specimens
         self.next_specimens = {}
+
+
+class ColoredSquare(object):
+    def __init__(self, colors, random):
+        self.colors = colors
+        self.random = random
+
+    def color(self):
+        return self.random.choice(self.colors)

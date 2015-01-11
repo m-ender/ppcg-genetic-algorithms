@@ -8,6 +8,7 @@ class Coordinate():
         self.y = y % BOARD_HEIGHT
         self.real_y = y
         self.real_x = x
+        self.hash = hash((self.real_x, self.real_y))
 
     def __add__(self, other):
         return Coordinate(other.real_x+self.real_x, other.real_y+self.real_y)
@@ -16,7 +17,7 @@ class Coordinate():
         return Coordinate(self.real_x-other.real_x, self.real_y-other.real_y)
 
     def __hash__(self):
-        return hash((self.real_x, self.real_y))
+        return self.hash
 
     def __eq__(self, other):
         return self.real_x == other.real_x and self.real_y == other.real_y

@@ -49,7 +49,8 @@ random = Random(RANDOM_SEED)
 
 
 def initialize_board():
-    board = Board(random.randrange(0, 100000000))
+    colors = [random.randrange(0, 100000000) for _ in xrange(16)]
+    board = Board(random.randrange(0, 100000000), colors[:4])
     #Build each type of trap
     colors = list(range(NUMBER_COLORS))
     random.shuffle(colors)
@@ -90,6 +91,7 @@ def take_turn(board, turn_number, player):
                 #TODO move the player to a random x position upon reaching top
                 direction = player.take_turn(specimen, vision)
                 new_location = coordinate+direction
+
                 if new_location in board.next_specimens:
                     board.next_specimens[new_location].append(specimen)
                 else:
