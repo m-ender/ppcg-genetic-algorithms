@@ -43,7 +43,7 @@ class TeleportationTrap(Trap):
 
 
 class WallTrap(Trap):
-    possible_directions = [coordinates.Coordinate(0, 0)]
+    possible_directions = [coordinates.Coordinate(0, 0)]*4
     def moved_to(self, coordinate, origin):
         if origin in self.board.next_specimens:
             self.board.next_specimens[origin].extend(
