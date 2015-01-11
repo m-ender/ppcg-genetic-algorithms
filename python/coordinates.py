@@ -3,7 +3,7 @@ BOARD_HEIGHT = 200
 
 
 class Coordinate():
-    def __init__(self, x, y, overflow=True):
+    def __init__(self, x, y):
         self.x = x % BOARD_WIDTH
         self.y = y % BOARD_HEIGHT
         self.real_y = y
