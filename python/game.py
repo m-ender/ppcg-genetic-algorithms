@@ -27,9 +27,13 @@ INITIAL_SPECIMENS = 50
 REPRODUCTION_RATE = 1
 
 DNA_LENGTH = 50
+DNA_CROSSOVER_RATE = .1
+
 LIFE_SPAN = 200
 
 VISION_WIDTH = 5
+
+NUM_PARENTS = 2
 
 VISION_DISTANCE = VISION_WIDTH/2
 
@@ -57,7 +61,9 @@ def initialize_board():
 
     #add specimens
     for __ in xrange(INITIAL_SPECIMENS):
-        add_specimen(board, 0)
+        board.add_specimen(
+            Specimen(random.getrandbits(DNA_LENGTH), 0),
+            coordinates.Coordinate(random.randrange(0, BOARD_WIDTH), 0))
     #add traps
     for height in xrange(BOARD_HEIGHT):
         for width in xrange(BOARD_WIDTH):
@@ -84,10 +90,31 @@ def take_turn(board, turn_number, player):
     return points
 
 
-def add_specimen(board, turn_number):
-    board.add_specimen(
-        Specimen(random.getrandbits(DNA_LENGTH), turn_number),
-        coordinates.Coordinate(random.randrange(0, BOARD_WIDTH), 0))
+def breed(board):
+    total = 0
+    for specimens, coordinate in board.specimens:
+        total += coordinate.y*len(specimens)
+    specimen_positions = [random.randrange(total) for __ in xrange(NUM_PARENTS)]
+    selected_specimens = []
+    for specimens, coordinate in board.specimens:
+        specimen_positions = [position-coordinate.y*len(specimens)
+                              for position in specimen_positions]
+        to_remove_position = -1
+        for position in specimen_positions:
+            if position < 0:
+                selected_specimens.append(random.choice(specimens))
+                to_remove_position = position
+        if to_remove_position >= 0:
+            del specimen_positions[to_remove_position]
+        if len(selected_specimens) == NUM_PARENTS:
+            break
+    current_parent = random.choice(selected_specimens)
+    for bit in xrange(len(selected_specimens[0])):
+        if random.random() < DNA_CROSSOVER_RATE:
+            current_parent = random.choice(selected_specimens)
+        current_parent.bit_at(bit)  #Need to add into a single integer
+    #Need to create specimen
+
 
 
 def run():
