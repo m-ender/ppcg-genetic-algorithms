@@ -8,10 +8,11 @@ import sys
 import trap
 import itertools
 import coordinates
+import time
 #Pick one of the following 3:
-from graphical_display import Display  #Requires pygame
+#from graphical_display import Display  #Requires pygame
 #from text_display import Display
-#from no_display import Display
+from no_display import Display
 
 
 if sys.version_info >= (3,):
@@ -24,7 +25,7 @@ BOARD_HEIGHT = coordinates.BOARD_HEIGHT
 TRAP_FREQUENCY = .1
 NUMBER_COLORS = 50  # needs to be bigger than 27 to have enough for the board
 
-NUMBER_OF_TURNS = 100000
+NUMBER_OF_TURNS = 10000
 
 INITIAL_SPECIMENS = 50
 SPECIMEN_LIFESPAN = 500
@@ -147,11 +148,7 @@ def breed(board, current_turn):
 
 
 def check_for_life(board):
-    for coordinate, specimens in board.specimens.items():
-        if len(specimens) != 0:
-            return True
-    return False
-
+    return len(board.specimens())
 
 def run():
     player = Player.PLAYER_TYPE()
@@ -161,6 +158,7 @@ def run():
     for board_number in xrange(NUMBER_OF_BOARDS):
         print("Running board #"+str(board_number+1)+"/"+str(NUMBER_OF_BOARDS))
         board = initialize_board()
+        start = time.time()
         for turn_number in xrange(NUMBER_OF_TURNS):
             # Move
             total_points += take_turn(board, turn_number, player)
@@ -178,9 +176,12 @@ def run():
             for coordinate in board.get_changed_cells():
                 display.draw_cell(coordinate, board)
             display.update()
+            if not turn_number % int(NUMBER_OF_TURNS/100):
+                print(str(turn_number*100/NUMBER_OF_TURNS)+"% "
+                      +str(time.time()-start)+" sec")
         #Score remaining specimen
         for coordinate, specimen in board.specimens.items():
-            total_points += int(coordinate.real_y/BOARD_HEIGHT)*specimen
+            total_points += int(coordinate.real_y/BOARD_HEIGHT)*len(specimen)
     print("Your bot got "+str(total_points)+" points")
 
 

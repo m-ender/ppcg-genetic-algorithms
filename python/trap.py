@@ -14,7 +14,7 @@ class Trap(object):
 
 class DeathTrap(Trap):
     def turn(self, coordinates):
-        self.board.specimens[coordinates] = []
+        del self.board.specimens[coordinates]
 
 
 class TeleportationTrap(Trap):
@@ -26,7 +26,7 @@ class TeleportationTrap(Trap):
         else:
             self.board.next_specimens[coordinates+self.direction] = \
                 self.board.next_specimens[coordinates]
-        self.board.next_specimens[coordinates] = []
+        del self.board.next_specimens[coordinates]
 
 
 class WallTrap(Trap):
@@ -37,7 +37,7 @@ class WallTrap(Trap):
         else:
             self.board.next_specimens[origin] = \
                 self.board.next_specimens[coordinates]
-        self.board.next_specimens[coordinates] = []
+        del self.board.next_specimens[coordinates]
 
 
 trap_types = DeathTrap, TeleportationTrap, WallTrap
