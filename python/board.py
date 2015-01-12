@@ -7,7 +7,7 @@ class Board(object):
         self.specimens = {}
         self.traps = {}
         self.next_specimens = {}
-        self.blank_cell = [ColoredSquare(blank_colors, self.random)]
+        self.blank_cell = ColoredSquare(self.random.choice(blank_colors))
         self.changed_cells = set()
 
     def add_specimen(self, specimen, coordinates):
@@ -22,7 +22,7 @@ class Board(object):
         self.changed_cells.add(coordinates)
 
     def get_color(self, coordinates):
-        self.traps.get(coordinates, self.blank_cell)
+        return self.traps.get(coordinates, self.blank_cell)
 
     def get_changed_cells(self):
         changed = self.changed_cells
@@ -37,9 +37,5 @@ class Board(object):
 
 
 class ColoredSquare(object):
-    def __init__(self, colors, random):
-        self.colors = colors
-        self.random = random
-
-    def color(self):
-        return self.random.choice(self.colors)
+    def __init__(self, color):
+        self.color = color

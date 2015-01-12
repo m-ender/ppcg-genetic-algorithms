@@ -12,9 +12,9 @@ import time
 
 #Pick one of the following:
 #from graphical_display import Display  #Requires pygame
-#from tkinter_display import Display #Requires tkinter
+from tkinter_display import Display #Requires tkinter
 #from text_display import Display
-from no_display import Display
+#from no_display import Display
 
 
 if sys.version_info >= (3,):
@@ -44,7 +44,7 @@ DNA_MUTATION_RATE = .01
 VISION_WIDTH = 5
 VISION_DISTANCE = int(VISION_WIDTH/2)
 VISION = [coordinates.Coordinate(x, y)
-          for x in xrange(-VISION_DISTANCE, VISION_DISTANCE)
+          for x in xrange(-VISION_DISTANCE, VISION_DISTANCE+1)
           for y in xrange(VISION_DISTANCE, -VISION_DISTANCE-1, -1)]
 
 RANDOM_SEED = 13722829
@@ -93,7 +93,7 @@ def take_turn(board, turn_number, player):
                 vision = [board.get_color(coordinate+offset)
                           for offset in VISION]
                 #move specimen
-                #TODO move the player to a random x position upon reaching top
+                #TODO move the player to a random x position reset birth upon reaching top
                 direction = player.take_turn(specimen, vision)
                 new_location = coordinate+direction
 
@@ -113,7 +113,7 @@ def breed(board, current_turn):
     #Calculate the total height of all of the specimens
     total = 0
     for coordinate, specimens in board.specimens.items():
-        total += (coordinate.y+1)*len(specimens)
+        total += max(coordinate.y+1,0)*len(specimens)
     #Pick random heights from the total height to find a parent
     specimen_positions = [random.randrange(total) for _ in xrange(NUM_PARENTS)]
     selected_specimens = []
@@ -121,7 +121,7 @@ def breed(board, current_turn):
         if not specimens:
             continue
         #subtract a specimen's height from the random height
-        specimen_positions = [position-(coordinate.y+1)*len(specimens)
+        specimen_positions = [position-max(coordinate.y+1,0)*len(specimens)
                               for position in specimen_positions]
         to_remove_position = -1
         for position in specimen_positions:
