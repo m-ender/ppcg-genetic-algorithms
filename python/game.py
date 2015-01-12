@@ -77,7 +77,7 @@ def take_turn(board, turn_number, player):
         for specimen in specimens:
             #Kill specimens of old age
             if turn_number == specimen.birth + SPECIMEN_LIFESPAN:
-                if coordinate.x+1 >= BOARD_WIDTH:
+                if coordinate.at_finish():
                     points += 1
             else:
                 if coordinate.x+1 >= BOARD_WIDTH:
@@ -94,8 +94,7 @@ def take_turn(board, turn_number, player):
                     new_square = board.get_square(coordinate)
                     new_location = coordinate
                 teleported = new_square.teleport+new_location
-                if coordinate.x+1 >= BOARD_WIDTH and \
-                        coordinate.y >= 0 and coordinate.y < BOARD_HEIGHT:
+                if coordinate.at_finish():
                     board.next_specimens[coordinate] = specimen
                     continue
                 if board.get_square(teleported).killer:
@@ -181,7 +180,7 @@ def run():
                       +str(time.time()-start)+" sec")
         #Score remaining specimen
         for coordinate, specimen in board.specimens.items():
-            if coordinate.x+1 >= BOARD_WIDTH:
+            if coordinate.at_finish():
                 total_points += len(specimen)
     print("Your bot got "+str(total_points)+" points")
 
