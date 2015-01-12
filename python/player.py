@@ -20,11 +20,10 @@ class Player(object):
         return self.vision[adjusted_coordinates.x, adjusted_coordinates.y]
 
 
-
-
 class RandomPlayer(Player):
     def take_turn(self, specimen, vision):
         return Coordinate(random.randint(-1, 1), 1)
+
 
 class LinearCombinationPlayer(Player):
     def __init__(self):

@@ -92,15 +92,10 @@ def take_turn(board, turn_number, player):
                 if board.get_square(teleported).killer:
                     continue
                 if teleported in board.next_specimens:
-                    board.next_specimens[new_location].append(specimen)
+                    board.next_specimens[teleported].append(specimen)
                 else:
-                    board.next_specimens[new_location] = [specimen]
+                    board.next_specimens[teleported] = [specimen]
 
-    #Kill out of bounds specimens
-    for coordinate in board.next_specimens.keys():
-        if coordinate.y < 0 or coordinate.y >= BOARD_HEIGHT or \
-                coordinate.x < 0 or coordinate.x >= BOARD_HEIGHT:
-            del board.next_specimens[coordinate]
     #transfer next_specimens to be the current specimens
     board.update_specimens()
     return points
@@ -152,7 +147,7 @@ def breed(board, current_turn):
 
 
 def check_for_life(board):
-    return len(board.specimens) < NUM_PARENTS
+    return len(board.specimens) > NUM_PARENTS
 
 
 

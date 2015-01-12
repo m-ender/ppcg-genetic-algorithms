@@ -40,6 +40,8 @@ class Board(object):
                     self.get_square(coordinate).wall = True
 
     def get_square(self, coordinate):
+        if coordinate.y < 0 or coordinate.x < 0:
+            return self.out_of_bounds
         try:
             return self.squares[coordinate.y][coordinate.x]
         except IndexError:
