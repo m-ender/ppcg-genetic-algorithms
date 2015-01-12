@@ -16,7 +16,6 @@ class Display:
     def __init__(self, height, width):
         self.width_in_pixels = width * CELL_SCALAR
         self.height_in_pixels = height * CELL_SCALAR
-        print(self.width_in_pixels, self.height_in_pixels)
         number_of_pixels = self.width_in_pixels*self.height_in_pixels
         
         empty_red, empty_green, empty_blue = EMPTY_COLOR
