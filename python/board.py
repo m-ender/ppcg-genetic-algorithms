@@ -1,7 +1,4 @@
 from random import Random
-from coordinates import BOARD_HEIGHT, BOARD_WIDTH
-
-OUT_OF_BOUNDS_COLOR = -1
 
 
 class Board(object):
@@ -25,10 +22,7 @@ class Board(object):
         self.changed_cells.add(coordinates)
 
     def get_color(self, coordinates):
-        if coordinates.x < 0 or coordinates.y < 0 or \
-                coordinates.x > BOARD_WIDTH or coordinates.y > BOARD_HEIGHT:
-            return OUT_OF_BOUNDS_COLOR
-        self.traps.get(coordinates, self.blank_cell)
+        return self.traps.get(coordinates, self.blank_cell)
 
     def get_changed_cells(self):
         changed = self.changed_cells
