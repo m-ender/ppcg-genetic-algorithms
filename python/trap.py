@@ -1,5 +1,8 @@
 import coordinates
+from sys import version_info
 
+if version_info >= (3,):
+    xrange = range
 
 class Trap(object):
     possible_directions = []
