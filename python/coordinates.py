@@ -4,25 +4,23 @@ BOARD_HEIGHT = 200
 
 class Coordinate():
     def __init__(self, x, y):
-        self.x = x % BOARD_WIDTH
-        self.y = y % BOARD_HEIGHT
-        self.real_y = y
-        self.real_x = x
-        self.hash = hash((self.real_x, self.real_y))
+        self.x = x
+        self.y = y 
+        self.hash = hash((x, y))
 
     def __add__(self, other):
-        return Coordinate(other.real_x+self.real_x, other.real_y+self.real_y)
+        return Coordinate(other.x+self.x, other.y+self.y)
 
     def __sub__(self, other):
-        return Coordinate(self.real_x-other.real_x, self.real_y-other.real_y)
+        return Coordinate(self.x-other.x, self.y-other.y)
 
     def __hash__(self):
         return self.hash
 
     def __eq__(self, other):
-        return self.real_x == other.real_x and self.real_y == other.real_y
+        return self.x == other.x and self.y == other.y
 
     def __mul__(self, other):
-        return Coordinate(self.real_x*other, self.real_y*other)
+        return Coordinate(self.x*other, self.y*other)
 
 directions = [Coordinate(x,y) for x in (-1,0,1) for y in (-1,0,1)]

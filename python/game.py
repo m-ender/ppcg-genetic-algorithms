@@ -6,7 +6,6 @@ from specimen import Specimen
 import player as Player
 import sys
 import trap
-import itertools
 import coordinates
 import time
 
@@ -87,16 +86,21 @@ def take_turn(board, turn_number, player):
         for specimen in specimens:
             #Kill specimens of old age
             if turn_number == specimen.birth + SPECIMEN_LIFESPAN:
-                points += int(coordinate.real_y/BOARD_HEIGHT)
+                if coordinate.y == BOARD_HEIGHT:
+                    points += 1
             else:
+                if coordinate.y == BOARD_HEIGHT:
+                    board.next_specimens[coordinate] = specimen
+                    continue
                 #calculate vision
                 vision = [board.get_color(coordinate+offset)
                           for offset in VISION]
                 #move specimen
-                #TODO move the player to a random x position upon reaching top
                 direction = player.take_turn(specimen, vision)
                 new_location = coordinate+direction
-
+                if new_location.y < 0 or new_location.y > BOARD_HEIGHT \
+                        or new_location.x < 0 or new_location.x > BOARD_WIDTH:
+                    continue  # Kill the specimen if out of bounds
                 if new_location in board.next_specimens:
                     board.next_specimens[new_location].append(specimen)
                 else:
