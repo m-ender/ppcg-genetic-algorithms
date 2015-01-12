@@ -8,10 +8,9 @@ class Trap(object):
     possible_directions = []
     max_traps = 4
 
-    def __init__(self, board, direction, color):
+    def __init__(self, board, direction):
         self.board = board
         self.direction = direction
-        self.color = color
 
     def turn(self, coordinate):
         pass

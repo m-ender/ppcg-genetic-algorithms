@@ -27,8 +27,6 @@ class Display:
             self.colors[color_code] = color
         else:
             color = self.colors[color_code]
-        if coordinates not in board.traps:
-            color = (0, 0, 0)
         self.screen.fill(color, pygame.Rect(
             (coordinates.x*CELL_SCALAR, coordinates.y*CELL_SCALAR),
             (CELL_SCALAR, CELL_SCALAR)

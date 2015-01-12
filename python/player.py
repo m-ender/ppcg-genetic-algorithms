@@ -40,7 +40,7 @@ class LinearCombinationPlayer(Player):
     def take_turn(self, specimen, vision):
         s = 0
         for i in range(25):
-            s += specimen.bit_range(2*i,2*i+2)*vision[i].color
+            s += specimen.bit_range(2*i,2*i+2)*vision[i]
         return self.coords[s%3]
 
 
