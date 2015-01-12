@@ -1,6 +1,8 @@
-import tkinter
+try:
+    import tkinter
+except ImportError:
+    import Tkinter as tkinter
 import random
-import sys
 import array
 
 TITLE = "The Genetic Rat Race"
