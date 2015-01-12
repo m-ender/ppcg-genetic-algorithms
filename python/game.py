@@ -84,12 +84,18 @@ def take_turn(board, turn_number, player):
                 #move specimen
                 direction = player.take_turn(specimen, vision)
                 new_location = coordinate+direction
-                if new_location in board.next_specimens:
+                new_square = board.get_square(new_location)
+                if new_square.wall:
+                    new_square = board.get_square(coordinate)
+                    new_location = coordinate
+                teleported = new_square.teleport+new_location
+                if board.get_square(teleported).killer:
+                    continue
+                if teleported in board.next_specimens:
                     board.next_specimens[new_location].append(specimen)
                 else:
                     board.next_specimens[new_location] = [specimen]
-                #spring movement-based traps
-                board.get_trap(new_location).moved_to(new_location, coordinate)
+
     #Kill out of bounds specimens
     for coordinate in board.next_specimens.keys():
         if coordinate.y < 0 or coordinate.y >= BOARD_HEIGHT or \
@@ -162,12 +168,6 @@ def run():
         for turn_number in xrange(NUMBER_OF_TURNS):
             # Move
             total_points += take_turn(board, turn_number, player)
-            # Kill
-            for y in xrange(BOARD_WIDTH):
-                for x in xrange(BOARD_HEIGHT):
-                    coordinate = coordinates.Coordinate(x, y)
-                    board.get_trap(coordinate).turn(coordinate)
-
             if not check_for_life(board):
                 break
             # Reproduce

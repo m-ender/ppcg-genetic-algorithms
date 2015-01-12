@@ -12,47 +12,35 @@ class Trap(object):
         self.board = board
         self.direction = direction
 
-    def turn(self, coordinate):
-        pass
+    def is_killer(self):
+        return False
 
-    def moved_to(self, coordinate, origin):
-        pass
+    def is_mover(self):
+        return False
 
-    def color(self):
-        return self.color
+    def is_wall(self):
+        return False
 
 
 class DeathTrap(Trap):
     possible_directions = coordinates.directions
 
-    def turn(self, coordinate):
-        self.board.specimens.pop(coordinate, 0)
+    def is_killer(self):
+        return True
 
 
 class TeleportationTrap(Trap):
     possible_directions = [coordinates.Coordinate(x,y) for x in xrange(-5, 6)
                            for y in xrange(-5, 6) if x != 0 or y != 0]
 
-    def moved_to(self, coordinate, origin):
-        if coordinate+self.direction in self.board.next_specimens:
-            self.board.next_specimens[coordinate+self.direction].extend(
-                self.board.next_specimens[coordinate])
-        else:
-            self.board.next_specimens[coordinate+self.direction] = \
-                self.board.next_specimens[coordinate]
-        del self.board.next_specimens[coordinate]
-
+    def is_mover(self):
+        return True
 
 class WallTrap(Trap):
-    possible_directions = [coordinates.Coordinate(0, 0)]*4
-    def moved_to(self, coordinate, origin):
-        if origin in self.board.next_specimens:
-            self.board.next_specimens[origin].extend(
-                self.board.next_specimens[coordinate])
-        else:
-            self.board.next_specimens[origin] = \
-                self.board.next_specimens[coordinate]
-        del self.board.next_specimens[coordinate]
+    possible_directions = coordinates.directions
+
+    def is_square(self):
+        return True
 
 
 trap_types = DeathTrap, TeleportationTrap, WallTrap

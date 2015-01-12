@@ -1,8 +1,10 @@
 from random import Random
-from coordinates import BOARD_HEIGHT, BOARD_WIDTH
+from coordinates import BOARD_HEIGHT, BOARD_WIDTH, Coordinate
 from trap import trap_types, Trap
+from square import Square
 
 OUT_OF_BOUNDS_COLOR = -1
+
 
 class Board(object):
     def __init__(self, seed, colors):
@@ -11,10 +13,12 @@ class Board(object):
         self.traps = {}
         self.next_specimens = {}
         self.changed_cells = set()
-        self.colors = [[self.random.choice(colors)
+        self.out_of_bounds = Square(OUT_OF_BOUNDS_COLOR)
+        self.out_of_bounds.killer = True
+        self.squares = [[Square(self.random.choice(colors))
                         for __ in xrange(BOARD_WIDTH)]
-                       for __ in xrange(BOARD_HEIGHT)]
-        self.traps = [Trap(self, None)]*len(colors)
+                        for __ in xrange(BOARD_HEIGHT)]
+        self.traps = [Trap(self, Coordinate(0, 0))]*len(colors)
         for trap_type in trap_types:
             used_traps = self.random.sample(trap_type.possible_directions,
                                             trap_type.max_traps)
@@ -22,10 +26,24 @@ class Board(object):
             colors = colors[len(used_traps):]
             for direction, color in coloring:
                 self.traps[color] = trap_type(self, direction)
+        for y in xrange(BOARD_HEIGHT):
+            for x in xrange(BOARD_WIDTH):
+                coordinate = Coordinate(x, y)
+                self.changed_cells.add(coordinate)
+                trap = self.traps[self.get_square(coordinate).color]
+                if trap.is_killer():
+                    self.get_square(trap.direction+coordinate).killer = True
+                if trap.is_mover():
+                    self.get_square(coordinate).teleport = trap.direction
+                if trap.is_wall():
+                    self.get_square(coordinate).killer = True
+                    self.get_square(coordinate).wall = True
 
-
-    def get_trap(self, coordinate):
-        return self.traps[self.get_color(coordinate)]
+    def get_square(self, coordinate):
+        try:
+            return self.squares[coordinate.y][coordinate.x]
+        except IndexError:
+            return self.out_of_bounds
 
     def add_specimen(self, specimen, coordinates):
         if coordinates in self.specimens:
@@ -34,14 +52,11 @@ class Board(object):
             self.specimens[coordinates] = [specimen]
         self.changed_cells.add(coordinates)
 
-    def add_square(self, color, coordinates):
-        self.colors[coordinates.y][coordinates.x] = color
-
     def get_color(self, coordinates):
         if coordinates.x < 0 or coordinates.x >= BOARD_WIDTH or \
                 coordinates.y < 0 or coordinates.y >= BOARD_HEIGHT:
             return OUT_OF_BOUNDS_COLOR
-        return self.colors[coordinates.y][coordinates.x]
+        return self.get_square(coordinates).color
 
     def get_changed_cells(self):
         changed = self.changed_cells
@@ -53,11 +68,3 @@ class Board(object):
         self.changed_cells.update(self.specimens.keys())
         self.specimens = self.next_specimens
         self.next_specimens = {}
-
-
-class BlankSquare(object):
-    def __init__(self, color):
-        self.color = color
-
-    def color(self):
-        return self.color
