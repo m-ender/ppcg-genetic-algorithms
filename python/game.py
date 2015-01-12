@@ -107,26 +107,20 @@ def breed(board, current_turn):
     for coordinate, specimens in board.specimens.items():
         total += (coordinate.y+1)*len(specimens)
     #Pick random heights from the total height to find a parent
-    specimen_positions = [random.randrange(total) for _ in xrange(NUM_PARENTS)]
+    selected_coordinates = {}
+    for __ in xrange(NUM_PARENTS):
+        count_down = random.randrange(total)
+        for coordinate, specimens in board.specimens.items():
+            already_selected = selected_coordinates.get(coordinate, 0)
+            count_down -= (coordinate.y+1) * (len(specimens) - already_selected)
+            if count_down < 0:
+                selected_coordinates[coordinate] = already_selected+1
+                break
     selected_specimens = []
-    for coordinate, specimens in board.specimens.items():
-        if not specimens:
-            continue
-        #subtract a specimen's height from the random height
-        specimen_positions = [position-(coordinate.y+1)*len(specimens)
-                              for position in specimen_positions]
-        to_remove_position = -1
-        for position in specimen_positions:
-            #once the random height is below 0
-            if position < 0:
-                #pick that specimen as one of the parents
-                selected_specimens.append(random.choice(specimens))
-                to_remove_position = position
-        #and remove the random height from the random heights
-        if to_remove_position >= 0:
-            del specimen_positions[to_remove_position]
-        if len(selected_specimens) == NUM_PARENTS:
-            break
+    for coordinate, count in selected_coordinates.items():
+        specimens = random.sample(board.specimens[coordinate], count)
+        selected_specimens.extend(specimens)
+
     #choose a random parent
     current_parent = random.choice(selected_specimens)
     new_dna = 0
@@ -148,7 +142,6 @@ def breed(board, current_turn):
 
 def check_for_life(board):
     return len(board.specimens) > NUM_PARENTS
-
 
 
 def run():
