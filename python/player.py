@@ -13,7 +13,7 @@ class Player(object):
         self.turn()
 
     def turn(self):
-        return Coordinate(0, 1)
+        return Coordinate(1, 0)
 
     def vision_at(self, coordinates):
         adjusted_coordinates = Coordinate(2, 2)+coordinates
@@ -22,7 +22,7 @@ class Player(object):
 
 class RandomPlayer(Player):
     def take_turn(self, specimen, vision):
-        return Coordinate(random.randint(-1, 1), 1)
+        return Coordinate(1, random.randint(-1, 1))
 
 
 class LinearCombinationPlayer(Player):

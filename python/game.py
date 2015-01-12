@@ -23,7 +23,7 @@ NUMBER_OF_BOARDS = 1
 BOARD_WIDTH = coordinates.BOARD_WIDTH
 BOARD_HEIGHT = coordinates.BOARD_HEIGHT
 
-TRAP_FREQUENCY = .1
+TRAP_FREQUENCY = .25
 
 NUMBER_OF_SAFE_COLORS = 4
 NUMBER_OF_COLORS = sum([trap_type.max_traps for trap_type in trap.trap_types])\
@@ -33,7 +33,7 @@ NUMBER_OF_TURNS = 10000
 
 INITIAL_SPECIMENS = 50
 SPECIMEN_LIFESPAN = 500
-REPRODUCTION_RATE = 1
+REPRODUCTION_RATE = 10
 NUM_PARENTS = 2
 
 DNA_LENGTH = 50
@@ -51,17 +51,22 @@ RANDOM_SEED = 13722829
 
 random = Random(RANDOM_SEED)
 
+def sanitized(board):
+    return True
 
 def initialize_board():
     colors = range(NUMBER_OF_COLORS)
     random.shuffle(colors)
-    board = Board(random.randrange(0, 10000000), colors)
+    while True:
+        board = Board(random.randrange(0, 10000000), colors)
+        if sanitized(board):
+            break
 
     #add specimens
     for __ in xrange(INITIAL_SPECIMENS):
         board.add_specimen(
             Specimen(random.getrandbits(DNA_LENGTH), 0),
-            coordinates.Coordinate(random.randrange(0, BOARD_WIDTH), 0))
+            coordinates.Coordinate(0, random.randrange(0, BOARD_HEIGHT)))
 
     return board
 
@@ -72,10 +77,10 @@ def take_turn(board, turn_number, player):
         for specimen in specimens:
             #Kill specimens of old age
             if turn_number == specimen.birth + SPECIMEN_LIFESPAN:
-                if coordinate.y+1 == BOARD_HEIGHT:
+                if coordinate.x+1 == BOARD_WIDTH:
                     points += 1
             else:
-                if coordinate.y+1 == BOARD_HEIGHT:
+                if coordinate.x+1 == BOARD_WIDTH:
                     board.next_specimens[coordinate] = specimen
                     continue
                 #calculate vision
@@ -105,14 +110,14 @@ def breed(board, current_turn):
     #Calculate the total height of all of the specimens
     total = 0
     for coordinate, specimens in board.specimens.items():
-        total += (coordinate.y+1)*len(specimens)
+        total += (coordinate.x+1)*len(specimens)
     #Pick random heights from the total height to find a parent
     selected_coordinates = {}
     for __ in xrange(NUM_PARENTS):
         count_down = random.randrange(total)
         for coordinate, specimens in board.specimens.items():
             already_selected = selected_coordinates.get(coordinate, 0)
-            count_down -= (coordinate.y+1) * (len(specimens) - already_selected)
+            count_down -= (coordinate.x+1) * (len(specimens) - already_selected)
             if count_down < 0:
                 selected_coordinates[coordinate] = already_selected+1
                 break
@@ -137,7 +142,7 @@ def breed(board, current_turn):
     #create specimen with new dna
     board.add_specimen(
         Specimen(new_dna, current_turn),
-        coordinates.Coordinate(random.randrange(0, BOARD_WIDTH), 0))
+        coordinates.Coordinate(0, random.randrange(0, BOARD_HEIGHT)))
 
 
 def check_for_life(board):
@@ -172,7 +177,7 @@ def run():
                       +str(time.time()-start)+" sec")
         #Score remaining specimen
         for coordinate, specimen in board.specimens.items():
-            if coordinate.y+1 == BOARD_HEIGHT:
+            if coordinate.x+1 == BOARD_WIDTH:
                 total_points += len(specimen)
     print("Your bot got "+str(total_points)+" points")
 

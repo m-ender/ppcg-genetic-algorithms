@@ -1,5 +1,5 @@
-BOARD_WIDTH = 50
-BOARD_HEIGHT = 200
+BOARD_WIDTH = 200
+BOARD_HEIGHT = 50
 
 
 class Coordinate():
