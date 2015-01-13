@@ -1,5 +1,5 @@
 from random import Random
-from coordinates import BOARD_HEIGHT, BOARD_WIDTH, Coordinate
+from coordinates import BOARD_HEIGHT, BOARD_WIDTH, Coordinate, UNSAFE_BOARD_WIDTH
 from trap import trap_types, Trap
 from square import Square
 from sys import version_info
@@ -18,12 +18,8 @@ class Board(object):
         self.changed_cells = set()
         self.out_of_bounds = Square(OUT_OF_BOUNDS_COLOR)
         self.out_of_bounds.killer = True
-        self.finish_line = Square(colors[-1])
-        self.squares = [[Square(self.random.choice(colors))
-                        for __ in xrange(BOARD_WIDTH)]
-                        for __ in xrange(BOARD_HEIGHT)]
+        self.all_colors = [color for color in colors]
         self.traps = [Trap(Coordinate(0, 0))]*len(colors)
-        self.starting_squares = []
         for trap_type in trap_types:
             used_traps = self.random.sample(trap_type.possible_directions,
                                             trap_type.max_traps)
@@ -31,6 +27,12 @@ class Board(object):
             colors = colors[len(used_traps):]
             for direction, color in coloring:
                 self.traps[color] = trap_type(direction)
+        safe_colors = colors
+        self.squares = [[Square(self.random.choice(
+            self.all_colors if x < UNSAFE_BOARD_WIDTH else safe_colors))
+            for x in xrange(BOARD_WIDTH)] for __ in xrange(BOARD_HEIGHT)]
+
+        self.starting_squares = []
         for y in xrange(BOARD_HEIGHT):
             for x in xrange(BOARD_WIDTH):
                 coordinate = Coordinate(x, y)
@@ -47,8 +49,6 @@ class Board(object):
     def get_square(self, coordinate):
         if coordinate.out_of_bounds():
             return self.out_of_bounds
-        if coordinate.at_finish():
-            return self.finish_line
         return self.squares[coordinate.y][coordinate.x]
 
     def add_specimen(self, specimen, coordinates):

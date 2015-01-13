@@ -1,4 +1,6 @@
-BOARD_WIDTH = 200
+
+UNSAFE_BOARD_WIDTH = 200
+BOARD_WIDTH = 205
 BOARD_HEIGHT = 50
 
 
@@ -27,6 +29,6 @@ class Coordinate():
         return self.x < 0 or self.y < 0 or self.y >= BOARD_HEIGHT
 
     def at_finish(self):
-        return not(self.out_of_bounds()) and self.x >= BOARD_WIDTH
+        return not(self.out_of_bounds()) and self.x >= UNSAFE_BOARD_WIDTH
 
 directions = [Coordinate(x,y) for x in (-1,0,1) for y in (-1,0,1)]
