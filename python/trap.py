@@ -39,7 +39,7 @@ class TeleportationTrap(Trap):
 class WallTrap(Trap):
     possible_directions = coordinates.directions
 
-    def is_square(self):
+    def is_wall(self):
         return True
 
 
