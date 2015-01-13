@@ -200,7 +200,7 @@ def run():
                 display.draw_cell(coordinate, board)
             display.update()
             if not turn_number % int(NUMBER_OF_TURNS/100):
-                print(str(turn_number*100/NUMBER_OF_TURNS)+"% "
+                print(str(int(turn_number*100/NUMBER_OF_TURNS))+"% "
                       +str(time.time()-start)+" sec")
         #Score remaining specimen
         for coordinate, specimen in board.specimens.items():
