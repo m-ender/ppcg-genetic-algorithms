@@ -9,6 +9,9 @@ TITLE = "The Genetic Rat Race"
 CELL_SCALAR = 4
 EMPTY_COLOR = (255, 255, 255)
 SPECIMEN_COLOR = (0, 0, 0)
+DEATH_COLOR = (255, 128, 128)
+TELEPORT_COLOR = (128, 128, 255)
+WALL_COLOR = (128, 128, 128)
 
 random = random.Random()
 
@@ -48,12 +51,23 @@ class Display:
         self.root.destroy()
 
     def draw_cell(self, coordinates, board):
-        color_code = board.get_color(coordinates)
-        if color_code not in self.colors:
-            color = [random.randrange(256) for __ in range(3)]
-            self.colors[color_code] = color
+        trap = board.traps[board.get_square(coordinates).color]
+        if trap.is_killer():
+            color = DEATH_COLOR
+        elif trap.is_mover():
+            color = TELEPORT_COLOR
+        elif trap.is_wall():
+            color = WALL_COLOR
         else:
-            color = self.colors[color_code]
+            color = EMPTY_COLOR
+    
+        # color_code = board.get_color(coordinates)
+        # if color_code not in self.colors:
+            # color = [random.randrange(256) for __ in range(3)]
+            # self.colors[color_code] = color
+        # else:
+            # color = self.colors[color_code]
+
         self.rectangle(color,
                        coordinates.x * CELL_SCALAR,
                        coordinates.y * CELL_SCALAR,
