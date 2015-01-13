@@ -172,7 +172,7 @@ def breed(board, current_turn):
         #mutate some of that data
         if random.random() < DNA_MUTATION_RATE:
             bit = -bit+1
-        new_dna = new_dna << 1 + bit
+        new_dna = (new_dna << 1) + bit
     assert new_dna <= DNA_MAX_VALUE
     #create specimen with new dna
     board.add_specimen(
