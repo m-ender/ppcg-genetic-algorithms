@@ -30,8 +30,8 @@ class DeathTrap(Trap):
 
 
 class TeleportationTrap(Trap):
-    possible_directions = [coordinates.Coordinate(x,y) for x in xrange(-5, 6)
-                           for y in xrange(-5, 6) if x != 0 or y != 0]
+    possible_directions = [coordinates.Coordinate(x,y) for x in xrange(-4, 5)
+                           for y in xrange(-4, 5) if x != 0 or y != 0]
 
     def is_mover(self):
         return True

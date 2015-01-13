@@ -29,11 +29,12 @@ class LinearCombinationPlayer(Player):
     def __init__(self):
         self.coords = [#Coordinate(-1,-1),
                        #Coordinate( 0,-1),
-                       #Coordinate( 1,-1),
+                       Coordinate( 1,-1),
                        #Coordinate(-1, 0),
-                       #Coordinate( 1, 0),
-                       Coordinate(-1, 1),
-                       Coordinate( 0, 1),
+                       #Coordinate( 0, 0),
+                       Coordinate( 1, 0),
+                       #Coordinate(-1, 1),
+                       #Coordinate( 0, 1),
                        Coordinate( 1, 1)]
 
     def take_turn(self, specimen, vision):
