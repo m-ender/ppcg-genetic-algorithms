@@ -106,7 +106,7 @@ def take_turn(board, turn_number, player):
             #Send winners back to start
             if coordinate.at_finish():
                 points += 1
-                new_start_coords = random.choice(safe_squares)
+                new_start_coords = random.choice(board.starting_squares)
                 if new_start_coords in board.next_specimens:
                     board.next_specimens[new_start_coords].append(specimen)
                 else:
