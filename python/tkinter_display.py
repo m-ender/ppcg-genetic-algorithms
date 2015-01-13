@@ -51,12 +51,12 @@ class Display:
         self.root.destroy()
 
     def draw_cell(self, coordinates, board):
-        trap = board.traps[board.get_square(coordinates).color]
-        if trap.is_killer():
+        square = board.get_square(coordinates)
+        if square.killer:
             color = DEATH_COLOR
-        elif trap.is_mover():
+        elif square.teleport:
             color = TELEPORT_COLOR
-        elif trap.is_wall():
+        elif square.wall:
             color = WALL_COLOR
         else:
             color = EMPTY_COLOR
