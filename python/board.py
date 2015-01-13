@@ -2,6 +2,10 @@ from random import Random
 from coordinates import BOARD_HEIGHT, BOARD_WIDTH, Coordinate
 from trap import trap_types, Trap
 from square import Square
+from sys import version_info
+
+if version_info >= (3,):
+    xrange = range
 
 OUT_OF_BOUNDS_COLOR = -1
 

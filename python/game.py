@@ -10,10 +10,10 @@ import coordinates
 import time
 
 #Pick one of the following:
-from graphical_display import Display  #Requires pygame
+#from graphical_display import Display  #Requires pygame
 #from tkinter_display import Display #Requires tkinter
 #from text_display import Display
-#from no_display import Display
+from no_display import Display
 
 
 if sys.version_info >= (3,):
@@ -81,7 +81,7 @@ def sanitized(board):
 
 
 def initialize_board():
-    colors = range(NUMBER_OF_COLORS)
+    colors = list(range(NUMBER_OF_COLORS))
     random.shuffle(colors)
     while True:
         board = Board(random.randrange(0, 10000000), colors)
