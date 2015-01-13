@@ -11,9 +11,9 @@ import time
 
 #Pick one of the following:
 #from graphical_display import Display  #Requires pygame
-#from tkinter_display import Display #Requires tkinter
+from tkinter_display import Display #Requires tkinter
 #from text_display import Display
-from no_display import Display
+#from no_display import Display
 
 
 if sys.version_info >= (3,):
