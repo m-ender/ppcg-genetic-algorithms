@@ -35,6 +35,7 @@ REPRODUCTION_RATE = 10
 NUM_PARENTS = 2
 
 DNA_LENGTH = 50
+DNA_MAX_VALUE = (1 << DNA_LENGTH) - 1
 DNA_CROSSOVER_RATE = .1
 DNA_MUTATION_RATE = .01
 
@@ -102,13 +103,19 @@ def take_turn(board, turn_number, player):
     points = 0
     for coordinate, specimens in board.specimens.items():
         for specimen in specimens:
+            #Send winners back to start
+            if coordinate.at_finish():
+                points += 1
+                new_start_coords = random.choice(safe_squares)
+                if new_start_coords in board.next_specimens:
+                    board.next_specimens[new_start_coords].append(specimen)
+                else:
+                    board.next_specimens[new_start_coords] = [specimen]
+                #TODO add counter to show how many times specimen has restarted  
+                #TODO reset lifespan counter
+                continue
             #Kill specimens of old age
             if turn_number == specimen.birth + SPECIMEN_LIFESPAN:
-                if coordinate.at_finish():
-                    points += 1
-                continue
-            if coordinate.at_finish():
-                board.next_specimens[coordinate] = specimen
                 continue
             #calculate vision
             vision = [board.get_color(coordinate+offset)
@@ -165,7 +172,8 @@ def breed(board, current_turn):
         #mutate some of that data
         if random.random() < DNA_MUTATION_RATE:
             bit = -bit+1
-        new_dna = (new_dna+bit) << 2
+        new_dna = new_dna << 1 + bit
+    assert new_dna <= DNA_MAX_VALUE
     #create specimen with new dna
     board.add_specimen(
         Specimen(new_dna, current_turn),
