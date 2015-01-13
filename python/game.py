@@ -6,11 +6,12 @@ from specimen import Specimen
 import player as Player
 import sys
 import trap
-import itertools
 import coordinates
 import time
-#Pick one of the following 3:
+
+#Pick one of the following:
 from graphical_display import Display  #Requires pygame
+#from tkinter_display import Display #Requires tkinter
 #from text_display import Display
 #from no_display import Display
 
@@ -32,7 +33,7 @@ NUMBER_OF_TURNS = 10000
 
 INITIAL_SPECIMENS = 50
 SPECIMEN_LIFESPAN = 500
-REPRODUCTION_RATE = 1
+REPRODUCTION_RATE = 10
 NUM_PARENTS = 2
 
 DNA_LENGTH = 50
@@ -42,7 +43,7 @@ DNA_MUTATION_RATE = .01
 VISION_WIDTH = 5
 VISION_DISTANCE = int(VISION_WIDTH/2)
 VISION = [coordinates.Coordinate(x, y)
-          for x in xrange(-VISION_DISTANCE, VISION_DISTANCE)
+          for x in xrange(-VISION_DISTANCE, VISION_DISTANCE+1)
           for y in xrange(VISION_DISTANCE, -VISION_DISTANCE-1, -1)]
 
 RANDOM_SEED = 13722829
@@ -50,32 +51,52 @@ RANDOM_SEED = 13722829
 
 random = Random(RANDOM_SEED)
 
+def sanitized(board):
+    safe_squares = []
+    for start_y in xrange(BOARD_HEIGHT):
+        start_coordinate = coordinates.Coordinate(0, start_y)
+        next_squares = {start_coordinate}
+        visited_squares = set(next_squares)
+        while True:
+            neighbors = [direction+coordinate
+                         for direction in coordinates.directions
+                         for coordinate in next_squares]
+            teleported = [board.get_square(neighbor).teleport + neighbor
+                          for neighbor in neighbors]
+            if any([square.at_finish() or square in safe_squares
+                    for square in teleported]):
+                safe_squares.append(start_coordinate)
+                break
+            alive = [square for square in teleported
+                     if not board.get_square(square).killer]
+            unvisited = [square for square in alive
+                         if square not in visited_squares]
+            if len(unvisited) == 0:
+                break
+            visited_squares.update(unvisited)
+            next_squares = set(unvisited)
+    return safe_squares
+
+
+
 
 def initialize_board():
-    colors = [random.randrange(0, 100000000) for _ in xrange(NUMBER_OF_COLORS)]
-    board = Board(random.randrange(0, 10000000), colors[NUMBER_OF_SAFE_COLORS:])
-    colors = colors[:NUMBER_OF_SAFE_COLORS]
-    traps = []
-    for trap_type in trap.trap_types:
-        used_traps = random.sample(trap_type.possible_directions,
-                                   trap_type.max_traps)
-        coloring = zip(used_traps, colors)
-        colors = colors[len(used_traps):]
-        traps.extend([trap_type(board, direction, color)
-                      for direction, color in coloring])
+    colors = range(NUMBER_OF_COLORS)
+    random.shuffle(colors)
+    while True:
+        board = Board(random.randrange(0, 10000000), colors)
+        safe_squares = sanitized(board)
+        if safe_squares:
+            board.starting_squares = safe_squares
+            break
+        print("Bad board, retrying...")
 
     #add specimens
     for __ in xrange(INITIAL_SPECIMENS):
         board.add_specimen(
             Specimen(random.getrandbits(DNA_LENGTH), 0),
-            coordinates.Coordinate(random.randrange(0, BOARD_WIDTH), 0))
+            random.choice(safe_squares))
 
-    #add traps
-    for height in xrange(BOARD_HEIGHT):
-        for width in xrange(BOARD_WIDTH):
-            if random.random() < TRAP_FREQUENCY:
-                board.add_trap(random.choice(traps),
-                               coordinates.Coordinate(width, height))
     return board
 
 
@@ -85,23 +106,33 @@ def take_turn(board, turn_number, player):
         for specimen in specimens:
             #Kill specimens of old age
             if turn_number == specimen.birth + SPECIMEN_LIFESPAN:
-                points += int(coordinate.real_y/BOARD_HEIGHT)
+                if coordinate.at_finish():
+                    points += 1
             else:
+                if coordinate.x+1 >= BOARD_WIDTH:
+                    board.next_specimens[coordinate] = specimen
+                    continue
                 #calculate vision
                 vision = [board.get_color(coordinate+offset)
                           for offset in VISION]
                 #move specimen
-                #TODO move the player to a random x position upon reaching top
                 direction = player.take_turn(specimen, vision)
                 new_location = coordinate+direction
-
-                if new_location in board.next_specimens:
-                    board.next_specimens[new_location].append(specimen)
+                new_square = board.get_square(new_location)
+                if new_square.wall:
+                    new_square = board.get_square(coordinate)
+                    new_location = coordinate
+                teleported = new_square.teleport+new_location
+                if coordinate.at_finish():
+                    board.next_specimens[coordinate] = specimen
+                    continue
+                if board.get_square(teleported).killer:
+                    continue
+                if teleported in board.next_specimens:
+                    board.next_specimens[teleported].append(specimen)
                 else:
-                    board.next_specimens[new_location] = [specimen]
-                #spring movement-based traps
-                if new_location in board.traps:
-                    board.traps[new_location].moved_to(new_location, coordinate)
+                    board.next_specimens[teleported] = [specimen]
+
     #transfer next_specimens to be the current specimens
     board.update_specimens()
     return points
@@ -111,28 +142,22 @@ def breed(board, current_turn):
     #Calculate the total height of all of the specimens
     total = 0
     for coordinate, specimens in board.specimens.items():
-        total += (coordinate.y+1)*len(specimens)
+        total += (coordinate.x+1)*len(specimens)
     #Pick random heights from the total height to find a parent
-    specimen_positions = [random.randrange(total) for _ in xrange(NUM_PARENTS)]
+    selected_coordinates = {}
+    for __ in xrange(NUM_PARENTS):
+        count_down = random.randrange(total)
+        for coordinate, specimens in board.specimens.items():
+            already_selected = selected_coordinates.get(coordinate, 0)
+            count_down -= (coordinate.x+1) * (len(specimens) - already_selected)
+            if count_down < 0:
+                selected_coordinates[coordinate] = already_selected+1
+                break
     selected_specimens = []
-    for coordinate, specimens in board.specimens.items():
-        if not specimens:
-            continue
-        #subtract a specimen's height from the random height
-        specimen_positions = [position-(coordinate.y+1)*len(specimens)
-                              for position in specimen_positions]
-        to_remove_position = -1
-        for position in specimen_positions:
-            #once the random height is below 0
-            if position < 0:
-                #pick that specimen as one of the parents
-                selected_specimens.append(random.choice(specimens))
-                to_remove_position = position
-        #and remove the random height from the random heights
-        if to_remove_position >= 0:
-            del specimen_positions[to_remove_position]
-        if len(selected_specimens) == NUM_PARENTS:
-            break
+    for coordinate, count in selected_coordinates.items():
+        specimens = random.sample(board.specimens[coordinate], count)
+        selected_specimens.extend(specimens)
+
     #choose a random parent
     current_parent = random.choice(selected_specimens)
     new_dna = 0
@@ -149,11 +174,11 @@ def breed(board, current_turn):
     #create specimen with new dna
     board.add_specimen(
         Specimen(new_dna, current_turn),
-        coordinates.Coordinate(random.randrange(0, BOARD_WIDTH), 0))
+        random.choice(board.starting_squares))
 
 
 def check_for_life(board):
-    return len(board.specimens)
+    return len(board.specimens) > NUM_PARENTS
 
 
 def run():
@@ -168,9 +193,6 @@ def run():
         for turn_number in xrange(NUMBER_OF_TURNS):
             # Move
             total_points += take_turn(board, turn_number, player)
-            # Kill
-            for coordinate, trap in board.traps.items():
-                trap.turn(coordinate)
             if not check_for_life(board):
                 break
             # Reproduce
@@ -187,7 +209,8 @@ def run():
                       +str(time.time()-start)+" sec")
         #Score remaining specimen
         for coordinate, specimen in board.specimens.items():
-            total_points += int(coordinate.real_y/BOARD_HEIGHT)*len(specimen)
+            if coordinate.at_finish():
+                total_points += len(specimen)
     print("Your bot got "+str(total_points)+" points")
 
 
