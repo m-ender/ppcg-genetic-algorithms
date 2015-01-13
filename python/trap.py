@@ -8,8 +8,7 @@ class Trap(object):
     possible_directions = []
     max_traps = 4
 
-    def __init__(self, board, direction):
-        self.board = board
+    def __init__(self, direction):
         self.direction = direction
 
     def is_killer(self):

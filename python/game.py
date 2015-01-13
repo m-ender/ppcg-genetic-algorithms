@@ -23,8 +23,6 @@ NUMBER_OF_BOARDS = 1
 BOARD_WIDTH = coordinates.BOARD_WIDTH
 BOARD_HEIGHT = coordinates.BOARD_HEIGHT
 
-TRAP_FREQUENCY = .1
-
 NUMBER_OF_SAFE_COLORS = 4
 NUMBER_OF_COLORS = sum([trap_type.max_traps for trap_type in trap.trap_types])\
                    + NUMBER_OF_SAFE_COLORS
@@ -108,30 +106,27 @@ def take_turn(board, turn_number, player):
             if turn_number == specimen.birth + SPECIMEN_LIFESPAN:
                 if coordinate.at_finish():
                     points += 1
+                continue
+            if coordinate.at_finish():
+                board.next_specimens[coordinate] = specimen
+                continue
+            #calculate vision
+            vision = [board.get_color(coordinate+offset)
+                      for offset in VISION]
+            #move specimen
+            direction = player.take_turn(specimen, vision)
+            new_location = coordinate+direction
+            new_square = board.get_square(new_location)
+            if new_square.wall:
+                new_square = board.get_square(coordinate)
+                new_location = coordinate
+            teleported = new_square.teleport+new_location
+            if board.get_square(teleported).killer and not coordinate.at_finish():
+                continue
+            if teleported in board.next_specimens:
+                board.next_specimens[teleported].append(specimen)
             else:
-                if coordinate.x+1 >= BOARD_WIDTH:
-                    board.next_specimens[coordinate] = specimen
-                    continue
-                #calculate vision
-                vision = [board.get_color(coordinate+offset)
-                          for offset in VISION]
-                #move specimen
-                direction = player.take_turn(specimen, vision)
-                new_location = coordinate+direction
-                new_square = board.get_square(new_location)
-                if new_square.wall:
-                    new_square = board.get_square(coordinate)
-                    new_location = coordinate
-                teleported = new_square.teleport+new_location
-                if coordinate.at_finish():
-                    board.next_specimens[coordinate] = specimen
-                    continue
-                if board.get_square(teleported).killer:
-                    continue
-                if teleported in board.next_specimens:
-                    board.next_specimens[teleported].append(specimen)
-                else:
-                    board.next_specimens[teleported] = [specimen]
+                board.next_specimens[teleported] = [specimen]
 
     #transfer next_specimens to be the current specimens
     board.update_specimens()

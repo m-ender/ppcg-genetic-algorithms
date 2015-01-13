@@ -4,6 +4,7 @@ except ImportError:
     import Tkinter as tkinter
 import random
 import array
+from coordinates import Coordinate
 
 TITLE = "The Genetic Rat Race"
 CELL_SCALAR = 4
@@ -52,10 +53,10 @@ class Display:
 
     def draw_cell(self, coordinates, board):
         square = board.get_square(coordinates)
-        if square.killer:
-            color = DEATH_COLOR
-        elif square.teleport:
+        if square.teleport != Coordinate(0, 0):
             color = TELEPORT_COLOR
+        elif square.killer:
+            color = DEATH_COLOR
         elif square.wall:
             color = WALL_COLOR
         else:
