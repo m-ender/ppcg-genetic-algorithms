@@ -20,6 +20,7 @@ class Board(object):
                         for __ in xrange(BOARD_WIDTH)]
                         for __ in xrange(BOARD_HEIGHT)]
         self.traps = [Trap(self, Coordinate(0, 0))]*len(colors)
+        self.starting_squares = []
         for trap_type in trap_types:
             used_traps = self.random.sample(trap_type.possible_directions,
                                             trap_type.max_traps)

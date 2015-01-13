@@ -23,7 +23,7 @@ NUMBER_OF_BOARDS = 1
 BOARD_WIDTH = coordinates.BOARD_WIDTH
 BOARD_HEIGHT = coordinates.BOARD_HEIGHT
 
-TRAP_FREQUENCY = .25
+TRAP_FREQUENCY = .1
 
 NUMBER_OF_SAFE_COLORS = 4
 NUMBER_OF_COLORS = sum([trap_type.max_traps for trap_type in trap.trap_types])\
@@ -52,21 +52,50 @@ RANDOM_SEED = 13722829
 random = Random(RANDOM_SEED)
 
 def sanitized(board):
-    return True
+    safe_squares = []
+    for start_y in xrange(BOARD_HEIGHT):
+        start_coordinate = coordinates.Coordinate(0, start_y)
+        next_squares = {start_coordinate}
+        visited_squares = set(next_squares)
+        while True:
+            neighbors = [direction+coordinate
+                         for direction in coordinates.directions
+                         for coordinate in next_squares]
+            teleported = [board.get_square(neighbor).teleport + neighbor
+                          for neighbor in neighbors]
+            if any([square.at_finish() or square in safe_squares
+                    for square in teleported]):
+                safe_squares.append(start_coordinate)
+                break
+            alive = [square for square in teleported
+                     if not board.get_square(square).killer]
+            unvisited = [square for square in alive
+                         if square not in visited_squares]
+            if len(unvisited) == 0:
+                break
+            visited_squares.update(unvisited)
+            next_squares = set(unvisited)
+    return safe_squares
+
+
+
 
 def initialize_board():
     colors = range(NUMBER_OF_COLORS)
     random.shuffle(colors)
     while True:
         board = Board(random.randrange(0, 10000000), colors)
-        if sanitized(board):
+        safe_squares = sanitized(board)
+        if safe_squares:
+            board.starting_squares = safe_squares
             break
+        print("Bad board, retrying...")
 
     #add specimens
     for __ in xrange(INITIAL_SPECIMENS):
         board.add_specimen(
             Specimen(random.getrandbits(DNA_LENGTH), 0),
-            coordinates.Coordinate(0, random.randrange(0, BOARD_HEIGHT)))
+            random.choice(safe_squares))
 
     return board
 
@@ -145,7 +174,7 @@ def breed(board, current_turn):
     #create specimen with new dna
     board.add_specimen(
         Specimen(new_dna, current_turn),
-        coordinates.Coordinate(0, random.randrange(0, BOARD_HEIGHT)))
+        random.choice(board.starting_squares))
 
 
 def check_for_life(board):
