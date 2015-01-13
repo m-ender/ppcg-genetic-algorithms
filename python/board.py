@@ -14,7 +14,6 @@ class Board(object):
     def __init__(self, seed, colors):
         self.random = Random(seed)
         self.specimens = {}
-        self.traps = {}
         self.next_specimens = {}
         self.changed_cells = set()
         self.out_of_bounds = Square(OUT_OF_BOUNDS_COLOR)
@@ -23,7 +22,7 @@ class Board(object):
         self.squares = [[Square(self.random.choice(colors))
                         for __ in xrange(BOARD_WIDTH)]
                         for __ in xrange(BOARD_HEIGHT)]
-        self.traps = [Trap(self, Coordinate(0, 0))]*len(colors)
+        self.traps = [Trap(Coordinate(0, 0))]*len(colors)
         self.starting_squares = []
         for trap_type in trap_types:
             used_traps = self.random.sample(trap_type.possible_directions,
@@ -31,7 +30,7 @@ class Board(object):
             coloring = zip(used_traps, colors)
             colors = colors[len(used_traps):]
             for direction, color in coloring:
-                self.traps[color] = trap_type(self, direction)
+                self.traps[color] = trap_type(direction)
         for y in xrange(BOARD_HEIGHT):
             for x in xrange(BOARD_WIDTH):
                 coordinate = Coordinate(x, y)
