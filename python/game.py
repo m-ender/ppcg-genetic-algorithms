@@ -108,11 +108,11 @@ def take_turn(board, turn_number, player):
                 points += 1
                 new_start_coords = random.choice(board.starting_squares)
                 specimen.birth = turn_number
+                specimen.bonus_fitness += coordinates.UNSAFE_BOARD_WIDTH
                 if new_start_coords in board.next_specimens:
                     board.next_specimens[new_start_coords].append(specimen)
                 else:
                     board.next_specimens[new_start_coords] = [specimen]
-                #TODO add counter to show how many times specimen has restarted
                 continue
             #Kill specimens of old age
             if turn_number == specimen.birth + SPECIMEN_LIFESPAN:
