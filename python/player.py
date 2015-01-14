@@ -22,7 +22,7 @@ class Player(object):
         return Coordinate(1, 0)
 
     def vision_at(self, x, y):
-        return self.vision[2+x, 2+y]
+        return self.vision[2+x][2+y]
 
 
 class RandomPlayer(Player):
@@ -47,7 +47,7 @@ class LinearCombinationPlayer(Player):
     def turn(self):
         s = 0
         for i in range(25):
-            s += self.bit_range(2*i,2*i+2)*self.vision_at(int(i/5), i%5)
+            s += self.bit_range(2*i,2*i+2)*self.vision_at(int(i/5)-2, i%5-2)
         return self.coords[s%self.n_moves]
 
 PLAYER_TYPE = LinearCombinationPlayer
