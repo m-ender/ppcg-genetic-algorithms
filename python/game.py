@@ -23,7 +23,7 @@ NUMBER_OF_BOARDS = 1
 BOARD_WIDTH = coordinates.BOARD_WIDTH
 BOARD_HEIGHT = coordinates.BOARD_HEIGHT
 
-NUMBER_OF_SAFE_COLORS = 20
+NUMBER_OF_SAFE_COLORS = 10
 NUMBER_OF_COLORS = sum([trap_type.max_traps for trap_type in trap.trap_types])\
                    + NUMBER_OF_SAFE_COLORS
 
