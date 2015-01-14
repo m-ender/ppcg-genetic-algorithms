@@ -23,6 +23,7 @@ class Trap(object):
 
 class DeathTrap(Trap):
     possible_directions = coordinates.directions
+    max_traps = 1
 
     def is_killer(self):
         return True
@@ -31,12 +32,14 @@ class DeathTrap(Trap):
 class TeleportationTrap(Trap):
     possible_directions = [coordinates.Coordinate(x,y) for x in xrange(-4, 5)
                            for y in xrange(-4, 5) if x != 0 or y != 0]
+    max_traps = 4
 
     def is_mover(self):
         return True
 
 class WallTrap(Trap):
     possible_directions = coordinates.directions
+    max_traps = 1
 
     def is_wall(self):
         return True

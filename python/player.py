@@ -29,19 +29,19 @@ class LinearCombinationPlayer(Player):
     def __init__(self):
         self.coords = [#Coordinate(-1,-1),
                        #Coordinate( 0,-1),
+                       Coordinate( 1, 0),
                        Coordinate( 1,-1),
                        #Coordinate(-1, 0),
                        #Coordinate( 0, 0),
-                       Coordinate( 1, 0),
                        #Coordinate(-1, 1),
                        #Coordinate( 0, 1),
                        Coordinate( 1, 1)]
+        self.n_moves = len(self.coords)
 
     def take_turn(self, specimen, vision):
         s = 0
         for i in range(25):
             s += specimen.bit_range(2*i,2*i+2)*vision[i]
-        return self.coords[s%3]
-
+        return self.coords[s%self.n_moves]
 
 PLAYER_TYPE = LinearCombinationPlayer

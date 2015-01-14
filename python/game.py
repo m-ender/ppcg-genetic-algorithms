@@ -11,9 +11,9 @@ import time
 
 #Pick one of the following:
 #from graphical_display import Display  #Requires pygame
-from tkinter_display import Display #Requires tkinter
+#from tkinter_display import Display #Requires tkinter
 #from text_display import Display
-#from no_display import Display
+from no_display import Display
 
 
 if sys.version_info >= (3,):
@@ -23,14 +23,14 @@ NUMBER_OF_BOARDS = 1
 BOARD_WIDTH = coordinates.BOARD_WIDTH
 BOARD_HEIGHT = coordinates.BOARD_HEIGHT
 
-NUMBER_OF_SAFE_COLORS = 4
+NUMBER_OF_SAFE_COLORS = 20
 NUMBER_OF_COLORS = sum([trap_type.max_traps for trap_type in trap.trap_types])\
                    + NUMBER_OF_SAFE_COLORS
 
 NUMBER_OF_TURNS = 10000
 
-INITIAL_SPECIMENS = 50
-SPECIMEN_LIFESPAN = 500
+INITIAL_SPECIMENS = 15
+SPECIMEN_LIFESPAN = 100
 REPRODUCTION_RATE = 10
 NUM_PARENTS = 2
 
@@ -106,13 +106,13 @@ def take_turn(board, turn_number, player):
             #Send winners back to start
             if coordinate.at_finish():
                 points += 1
-                new_start_coords = random.choice(safe_squares)
+                new_start_coords = random.choice(board.starting_squares)
+                specimen.birth = turn_number
                 if new_start_coords in board.next_specimens:
                     board.next_specimens[new_start_coords].append(specimen)
                 else:
                     board.next_specimens[new_start_coords] = [specimen]
-                #TODO add counter to show how many times specimen has restarted  
-                #TODO reset lifespan counter
+                #TODO add counter to show how many times specimen has restarted
                 continue
             #Kill specimens of old age
             if turn_number == specimen.birth + SPECIMEN_LIFESPAN:
@@ -172,7 +172,7 @@ def breed(board, current_turn):
         #mutate some of that data
         if random.random() < DNA_MUTATION_RATE:
             bit = -bit+1
-        new_dna = new_dna << 1 + bit
+        new_dna = (new_dna << 1) + bit
     assert new_dna <= DNA_MAX_VALUE
     #create specimen with new dna
     board.add_specimen(
@@ -208,8 +208,12 @@ def run():
                 display.draw_cell(coordinate, board)
             display.update()
             if not turn_number % int(NUMBER_OF_TURNS/100):
+                population = 0
+                for c, specimens in board.specimens.items():
+                    population += len(specimens)
                 print(str(int(turn_number*100/NUMBER_OF_TURNS))+"% "
-                      +str(time.time()-start)+" sec")
+                      +str(time.time()-start)+" sec - "
+                      +str(total_points)+" points - Population: "+str(population))
         #Score remaining specimen
         for coordinate, specimen in board.specimens.items():
             if coordinate.at_finish():

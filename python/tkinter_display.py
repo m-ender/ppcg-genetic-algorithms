@@ -7,7 +7,7 @@ import array
 from coordinates import Coordinate
 
 TITLE = "The Genetic Rat Race"
-CELL_SCALAR = 4
+CELL_SCALAR = 8
 EMPTY_COLOR = (255, 255, 255)
 SPECIMEN_COLOR = (0, 0, 0)
 DEATH_COLOR = (255, 128, 128)
@@ -23,12 +23,12 @@ class Display:
         self.width_in_pixels = width * CELL_SCALAR
         self.height_in_pixels = height * CELL_SCALAR
         number_of_pixels = self.width_in_pixels*self.height_in_pixels
-        
+
         empty_red, empty_green, empty_blue = EMPTY_COLOR
         self.red_values = array.array('B', [empty_red]*number_of_pixels)
         self.green_values = array.array('B', [empty_green]*number_of_pixels)
         self.blue_values = array.array('B', [empty_blue]*number_of_pixels)
-        
+
         self.root = tkinter.Tk()
         self.frame = tkinter.Frame(self.root,
                                    width=self.width_in_pixels,
@@ -61,7 +61,7 @@ class Display:
             color = DEATH_COLOR
         else:
             color = EMPTY_COLOR
-    
+
         # color_code = board.get_color(coordinates)
         # if color_code not in self.colors:
             # color = [random.randrange(256) for __ in range(3)]
@@ -74,7 +74,7 @@ class Display:
                        coordinates.y * CELL_SCALAR,
                        CELL_SCALAR,
                        CELL_SCALAR
-                       )    
+                       )
         if coordinates in board.specimens and board.specimens[coordinates]:
             self.rectangle(SPECIMEN_COLOR,
                            coordinates.x * CELL_SCALAR + 1,
@@ -82,17 +82,17 @@ class Display:
                            CELL_SCALAR - 2,
                            CELL_SCALAR - 2
                            )
-            
+
     def rectangle(self, color, x, y, width, height):
         for i in range(x, x + width):
             for j in range(y, y + height):
                 self.red_values[i + j*self.width_in_pixels] = color[0]
                 self.green_values[i + j*self.width_in_pixels] = color[1]
                 self.blue_values[i + j*self.width_in_pixels] = color[2]
-    
+
     def display(self,s):
-        self.picture.put(s,(0,0)) 
-            
+        self.picture.put(s,(0,0))
+
     def update(self):
         w = self.width_in_pixels
         h = self.height_in_pixels

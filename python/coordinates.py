@@ -1,13 +1,13 @@
 
-UNSAFE_BOARD_WIDTH = 200
-BOARD_WIDTH = 205
-BOARD_HEIGHT = 50
+UNSAFE_BOARD_WIDTH = 50
+BOARD_WIDTH = 55
+BOARD_HEIGHT = 15
 
 
 class Coordinate():
     def __init__(self, x, y):
         self.x = x
-        self.y = y 
+        self.y = y
         self.hash = hash((x, y))
 
     def __add__(self, other):
