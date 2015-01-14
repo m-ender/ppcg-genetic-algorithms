@@ -41,8 +41,8 @@ DNA_MUTATION_RATE = .01
 
 VISION_WIDTH = 5
 VISION_DISTANCE = int(VISION_WIDTH/2)
-VISION = [coordinates.Coordinate(x, y)
-          for x in xrange(-VISION_DISTANCE, VISION_DISTANCE+1)
+VISION = [[coordinates.Coordinate(x, y)
+          for x in xrange(-VISION_DISTANCE, VISION_DISTANCE+1)]
           for y in xrange(VISION_DISTANCE, -VISION_DISTANCE-1, -1)]
 
 RANDOM_SEED = 13722829
@@ -118,10 +118,10 @@ def take_turn(board, turn_number, player):
             if turn_number == specimen.birth + SPECIMEN_LIFESPAN:
                 continue
             #calculate vision
-            vision = [board.get_color(coordinate+offset)
-                      for offset in VISION]
+            vision = [[board.get_color(coordinate+offset)
+                      for offset in line] for line in VISION]
             #move specimen
-            direction = player.take_turn(specimen, vision)
+            direction = player.take_turn(specimen.dna, vision)
             new_location = coordinate+direction
             new_square = board.get_square(new_location)
             if new_square.wall:
@@ -140,25 +140,33 @@ def take_turn(board, turn_number, player):
     return points
 
 
+def score_specimen(coordinate, specimen):
+    return coordinate.x + specimen.bonus_fitness + 1
+
+
 def breed(board, current_turn):
     #Calculate the total height of all of the specimens
     total = 0
     for coordinate, specimens in board.specimens.items():
-        total += (coordinate.x+1)*len(specimens)
+        for specimen in specimens:
+            total += score_specimen(coordinate, specimen)
     #Pick random heights from the total height to find a parent
-    selected_coordinates = {}
+    selected_specimens = []
     for __ in xrange(NUM_PARENTS):
         count_down = random.randrange(total)
         for coordinate, specimens in board.specimens.items():
-            already_selected = selected_coordinates.get(coordinate, 0)
-            count_down -= (coordinate.x+1) * (len(specimens) - already_selected)
-            if count_down < 0:
-                selected_coordinates[coordinate] = already_selected+1
-                break
-    selected_specimens = []
-    for coordinate, count in selected_coordinates.items():
-        specimens = random.sample(board.specimens[coordinate], count)
-        selected_specimens.extend(specimens)
+            for specimen in specimens:
+                if specimen in selected_specimens:
+                    continue
+                count_down -= score_specimen(coordinate, specimen)
+                if count_down < 0:
+                    selected_specimens.append(specimen)
+                    total -= score_specimen(coordinate, specimen)
+                    break
+            else:
+                continue
+            break
+
 
     #choose a random parent
     current_parent = random.choice(selected_specimens)
