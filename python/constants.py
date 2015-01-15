@@ -7,7 +7,7 @@ BOARD_WIDTH = UNSAFE_BOARD_WIDTH + 5
 BOARD_HEIGHT = 15
 
 OUT_OF_BOUNDS_COLOR = -1
-
+NUMBER_OF_SAFE_COLORS = 10
 NUMBER_OF_KILLERS = 1
 NUMBER_OF_TELEPORTERS = 1
 NUMBER_OF_WALLS = 1
@@ -23,7 +23,7 @@ import time
 
 if sys.version_info >= (3,):
     xrange = range
-    
+
 #Display related constants:
 TITLE = "The Genetic Rat Race"
 CELL_SCALAR = 8
@@ -39,9 +39,8 @@ WALL_COLOR = (128, 128, 128)
 #from text_display import Display
 from no_display import Display
 
-
 NUMBER_OF_BOARDS = 1
-NUMBER_OF_SAFE_COLORS = 10
+
 NUMBER_OF_COLORS = sum([trap_type.max_traps for trap_type in trap.trap_types])\
                    + NUMBER_OF_SAFE_COLORS
 

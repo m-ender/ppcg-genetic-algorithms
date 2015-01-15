@@ -28,7 +28,7 @@ def sanitized(board):
             next_squares = set(unvisited)
     return safe_squares
 
-    
+
 def initialize_board():
     colors = list(range(NUMBER_OF_COLORS))
     random.shuffle(colors)
@@ -144,10 +144,11 @@ def check_for_life(board):
 
 def run():
     player = Player.PLAYER_TYPE()
-    total_points = 0
+    overall_points = 0
     reproduction_counter = 0
     display = Display(BOARD_HEIGHT, BOARD_WIDTH)
     for board_number in xrange(NUMBER_OF_BOARDS):
+        total_points = 0
         print("Running board #"+str(board_number+1)+"/"+str(NUMBER_OF_BOARDS))
         board = initialize_board()
         start = time.time()
@@ -176,7 +177,11 @@ def run():
         for coordinate, specimen in board.specimens.items():
             if coordinate.at_finish():
                 total_points += len(specimen)
-    print("Your bot got "+str(total_points)+" points")
+        print("Your bot got "+str(total_points)+" points")
+        overall_points += total_points
+    if NUMBER_OF_BOARDS > 1:
+        print("=========================================")
+        print("On average, your bot got "+str(overall_points/float(NUMBER_OF_BOARDS))+" points")
 
 
 if __name__ == "__main__":
