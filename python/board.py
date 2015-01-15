@@ -3,7 +3,7 @@ from coordinates import Coordinate
 from trap import trap_types, Trap
 from square import Square
 from sys import version_info
-from constants import BOARD_WIDTH, UNSAFE_BOARD_WIDTH, BOARD_HEIGHT, OUT_OF_BOUNDS_COLOR
+from constants import BOARD_EXTENDED_WIDTH, UNSAFE_BOARD_WIDTH, BOARD_HEIGHT, OUT_OF_BOUNDS_COLOR
 
 if version_info >= (3,):
     xrange = range
@@ -28,11 +28,11 @@ class Board(object):
         safe_colors = colors
         self.squares = [[Square(self.random.choice(
             self.all_colors if x < UNSAFE_BOARD_WIDTH else safe_colors))
-            for x in xrange(BOARD_WIDTH)] for __ in xrange(BOARD_HEIGHT)]
+            for x in xrange(BOARD_EXTENDED_WIDTH)] for __ in xrange(BOARD_HEIGHT)]
 
         self.starting_squares = []
         for y in xrange(BOARD_HEIGHT):
-            for x in xrange(BOARD_WIDTH):
+            for x in xrange(BOARD_EXTENDED_WIDTH):
                 coordinate = Coordinate(x, y)
                 self.changed_cells.add(coordinate)
                 trap = self.traps[self.get_square(coordinate).color]
