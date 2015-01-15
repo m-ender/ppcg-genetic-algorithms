@@ -24,6 +24,9 @@ class Player(object):
     def vision_at(self, x, y):
         return self.vision[2+x][2+y]
 
+class ForwardPlayer(Player):
+    def turn(self):
+        return Coordinate(1, 0)
 
 class RandomPlayer(Player):
     def turn(self):

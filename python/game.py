@@ -156,7 +156,7 @@ def check_for_life(board):
 
 def run():
     player = Player.PLAYER_TYPE()
-    overall_points = 0
+    game_records = []
     reproduction_counter = 0
     display = Display(BOARD_HEIGHT, BOARD_WIDTH)
     for board_number in xrange(NUMBER_OF_BOARDS):
@@ -186,10 +186,10 @@ def run():
                     population += len(specimens)
                 print('{:3.0%} '.format(turn_number/NUMBER_OF_TURNS) +
                       '{:5.4} sec '.format(time.time() - start) +
-                      '{: 5} pts '.format(total_points) +
+                      '{: 10} pts '.format(total_points) +
                       'Pop {: 5} '.format(population) +
                       'Fit ' +
-                      'Avg {:7.2} '.format(TotalFitness/float(population)) +
+                      'Avg {:7.3} '.format(TotalFitness/float(population)) +
                       'Max {: 5} '.format(MaxFitness) +
                       'AllTimeMax {: 5}'.format(AllTimeMaxFitness)
                       )
@@ -198,10 +198,11 @@ def run():
             if coordinate.at_finish():
                 total_points += len(specimen)
         print("Your bot got "+str(total_points)+" points")
-        overall_points += total_points
+        game_records.append(total_points)
     if NUMBER_OF_BOARDS > 1:
         print("=========================================")
-        print("On average, your bot got "+str(overall_points/float(NUMBER_OF_BOARDS))+" points")
+        print("Individual scores: "+str(game_records))
+        print("On average, your bot got "+str(sum(game_records)/float(NUMBER_OF_BOARDS))+" points")
 
 
 if __name__ == "__main__":
