@@ -1,6 +1,10 @@
 from constants import *
 
-random = Random(RANDOM_SEED)
+random = Random()
+
+TotalFitness = 0
+MaxFitness = 0
+AllTimeMaxFitness = 0
 
 def sanitized(board):
     safe_squares = []
@@ -95,11 +99,19 @@ def score_specimen(coordinate, specimen):
 
 
 def breed(board, current_turn):
+    global TotalFitness, MaxFitness, AllTimeMaxFitness
     #Calculate the total height of all of the specimens
     total = 0
+    MaxFitness = 0
     for coordinate, specimens in board.specimens.items():
         for specimen in specimens:
-            total += score_specimen(coordinate, specimen)
+            fitness = score_specimen(coordinate, specimen)
+            if fitness > MaxFitness:
+                MaxFitness = fitness
+                if fitness > AllTimeMaxFitness:
+                    AllTimeMaxFitness = fitness
+            total += fitness
+    TotalFitness = total
     #Pick random heights from the total height to find a parent
     selected_specimens = []
     for __ in xrange(NUM_PARENTS):
@@ -148,6 +160,8 @@ def run():
     reproduction_counter = 0
     display = Display(BOARD_HEIGHT, BOARD_WIDTH)
     for board_number in xrange(NUMBER_OF_BOARDS):
+        global TotalFitness, MaxFitness, AllTimeMaxFitness
+        AllTimeMaxFitness = 0
         total_points = 0
         print("Running board #"+str(board_number+1)+"/"+str(NUMBER_OF_BOARDS))
         board = initialize_board()
@@ -172,7 +186,10 @@ def run():
                     population += len(specimens)
                 print(str(int(turn_number*100/NUMBER_OF_TURNS))+"% "
                       +str(time.time()-start)+" sec - "
-                      +str(total_points)+" points - Population: "+str(population))
+                      +str(total_points)+" points - Population: "+str(population)+" - "
+                      +"Fitness... Avg: "+str(TotalFitness/float(population))
+                      +". Max: "+str(MaxFitness)
+                      +". AllTimeMax: "+str(AllTimeMaxFitness))
         #Score remaining specimen
         for coordinate, specimen in board.specimens.items():
             if coordinate.at_finish():
