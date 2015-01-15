@@ -8,6 +8,7 @@ import sys
 import trap
 import coordinates
 import time
+import constants
 
 #Pick one of the following:
 #from graphical_display import Display  #Requires pygame
