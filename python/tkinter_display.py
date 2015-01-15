@@ -5,14 +5,7 @@ except ImportError:
 import random
 import array
 from coordinates import Coordinate
-
-TITLE = "The Genetic Rat Race"
-CELL_SCALAR = 8
-EMPTY_COLOR = (255, 255, 255)
-SPECIMEN_COLOR = (0, 0, 0)
-DEATH_COLOR = (255, 128, 128)
-TELEPORT_COLOR = (128, 128, 255)
-WALL_COLOR = (128, 128, 128)
+from constants import TITLE, CELL_SCALAR, EMPTY_COLOR, SPECIMEN_COLOR, DEATH_COLOR, TELEPORT_COLOR, WALL_COLOR
 
 random = random.Random()
 
