@@ -185,7 +185,7 @@ def run():
                 for c, specimens in board.specimens.items():
                     population += len(specimens)
                 print('{:3.0%} '.format(turn_number/NUMBER_OF_TURNS) +
-                      '{:5.4} sec '.format(time.time() - start) +
+                      '{:5.4}s '.format(time.time() - start) +
                       '{: 10} pts '.format(total_points) +
                       'Pop {: 5} '.format(population) +
                       'Fit ' +
