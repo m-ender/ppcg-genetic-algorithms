@@ -8,7 +8,7 @@
 
 #include "./magicnum.h"
 
-const unsigned N_COLORS = N_COLORS_SAFE + N_COLORS_TELE + 
+const int N_COLORS = N_COLORS_SAFE + N_COLORS_TELE + 
     N_COLORS_TRAP + N_COLORS_WALL;
 
 class board_t;
@@ -82,7 +82,6 @@ class board_t {
     std::mt19937_64 rndeng;
     
     void breed() {
-//slog<<"B"<<bots.size();
         if(bots.size() < 2) return;
         ull sum = 0;
         for(int i = 0; i < bots.size(); i++) {
@@ -105,11 +104,10 @@ class board_t {
             par ^= randdouble() < PROB_CROSSOVER;
         }
         bots.push_back({child, randomspawnloc()});
-//slog<<' '<<bots.size()<<'\n';
     }
     
     coord_t randomspawnloc() {
-        return {0, spawnY[randint(spawnY.size())]};
+        return {1, spawnY[randint(spawnY.size())]};
     }
     
     void gengrid() {
@@ -130,49 +128,74 @@ class board_t {
         for(int x = GRID_X; x < GRID_X + VIEW_DIST; x++)
             for(int y = 1; y <= GRID_Y; y++)
                 colorgrid[x][y] = safes[randint(N_COLORS_SAFE)];
-                
-        for(int x = 1; x < GRID_X; x++)
-            for(int y = 1; y <= GRID_Y; y++)
-                colorgrid[x][y] = randint(N_COLORS);
+
         
         for(int x = 0; x <= GRID_X; x++) destgrid[x][0] = DEST_DEATH;
         for(int x = 0; x <= GRID_X; x++) destgrid[x][GRID_Y+1] = DEST_DEATH;
         for(int y = 1; y <= GRID_Y; y++) destgrid[0][y] = DEST_DEATH;
-      
+
         bool (*tmp)[GRID_Y+1] = new bool[GRID_X+1][GRID_Y+1];
-        do {
-            for(int y = 1; y <= GRID_Y; y++) destgrid[GRID_X][y] = DEST_GOAL; //may be overwritten by trap
-            memset(tmp, 0, (GRID_X+1) * sizeof(*tmp));
+
+        do {  //loop until grid is solvable
             for(int x = 1; x < GRID_X; x++)
-              for(int y = 1; y <= GRID_Y; y++)
-                switch(colortypes[colorgrid[x][y] = randint(N_COLORS)]) {
-                  case C_TRAP: {
-                    int xtarget = x + randint(-TRAP_DIST,TRAP_DIST), ytarget = y + randint(-TRAP_DIST,TRAP_DIST);
-                    if(xtarget > 0 && xtarget <= GRID_X && ytarget > 0 && ytarget <= GRID_Y) {
-                        tmp[xtarget][ytarget] = true;
+                for(int y = 1; y <= GRID_Y; y++)
+                    colorgrid[x][y] = randint(N_COLORS);
+        
+
+            memset(tmp, 0, (GRID_X+1) * sizeof(*tmp));
+            //determine trap, tele vectors
+            coord_t offset[N_COLORS];
+            for(int i = 0; i < N_COLORS; i++) {
+                if(colortypes[i] == C_TRAP) {
+                    offset[i].x = randint(-TRAP_DIST,TRAP_DIST);
+                    offset[i].y = randint(-TRAP_DIST,TRAP_DIST);
+                } else if(colortypes[i] == C_TELE) { 
+                    int w = 2 * TELE_DIST + 1;
+                    int r = randint(w*w - 1);  //no null teleporters
+                    offset[i].x = r % w - TELE_DIST;
+                    offset[i].y = r / w - TELE_DIST;
+                    if(!offset[i].x && !offset[i].y) {
+                        offset[i] = {TELE_DIST, TELE_DIST};
                     }
-                    break;
-                  }
-                  case C_WALL:
-                    tmp[x][y] = true;
-                    break;
                 }
-            for(int x = 1; x <= GRID_X; x++)
+            }
+            for(int x = 1; x < GRID_X; x++)
+                for(int y = 1; y <= GRID_Y; y++) {
+                    color_t colr = colorgrid[x][y];
+                    switch(colortypes[colr]) {
+                      case C_TRAP: {
+                        coord_t target = (coord_t){x, y} + offset[colr];
+                        if(target.x > 0 && target.x <= GRID_X && target.y > 0 && target.y <= GRID_Y) {
+                            tmp[target.x][target.y] = true;
+                        }
+                        break;
+                      }
+                      case C_WALL:
+                        tmp[x][y] = true;
+                        break;
+                    }
+                }
+            for(int x = 1; x <= GRID_X; x++) {
                 for(int y = 1; y <= GRID_Y; y++) {
                     coord_t end;
                     if(colortypes[colorgrid[x][y]] == C_TELE) {
-                        end = {x + randint(-TELE_DIST, TELE_DIST), y + randint(-TELE_DIST, TELE_DIST)};
+                        end = (coord_t){x, y} + offset[colorgrid[x][y]];
                         if(end.x < 1 || end.y < 1 || end.y > GRID_Y) end = DEST_DEATH;
                     } else {
                         end = {x, y};
                     }
-                    if(end.x > 0 && tmp[end.x][end.y]) {
+                    
+                    if(end.x > GRID_X) {
+                        end = DEST_GOAL;
+                    } else if(end.x > 0 && tmp[end.x][end.y]) {
                         end = DEST_DEATH;
-                    } else if(end.x >= GRID_X) {
+                    } else if(end.x == GRID_X) {
                         end = DEST_GOAL;
                     }
                     destgrid[x][y] = end;
                 }
+            }
+printgrid(0);printgrid(1);printgrid(2);
         } while(!calcsolvability());
         delete tmp;
     }
@@ -188,7 +211,7 @@ class board_t {
                 q.pop_back();
                 for(int x = -1; x <= 1; x++)
                     for(int y = -1; y <= 1; y++) {
-                        if(colortypes[colorgrid[s.x+x][s.y+y]] == C_WALL)
+                        if((x || y) && colortypes[colorgrid[s.x+x][s.y+y]] == C_WALL)
                             continue;
                         coord_t next = destgrid[s.x + x][s.y + y];
                         if(next.x == DEST_GOAL.x) goto win;
@@ -216,11 +239,11 @@ public:
         
         slog << "Board created with random seed " << rndseed << '\n';
         gengrid();
-        
+
         for(int i = N_INITIAL_BOTS; i--; ) {
             dna_t dna;
-            for(int i = 0; i < DNA_BITS; i++) dna[i] = randint(2);
-            bots.push_back({dna, randomspawnloc()});
+            for(int j = 0; j < DNA_BITS; j++) dna[j] = randint(2);
+            bots.emplace_back(bot_t{dna, randomspawnloc()});
        }
     }
         
@@ -290,11 +313,38 @@ public:
     double randdouble() {
         return std::uniform_real_distribution<>(0., 1.)(rndeng);
     }
+    
+    void printgrid(int m) {
+        for(int y = 1; y <= GRID_Y; y++) {
+            for(int x = 1; x < GRID_X + (m==2?1:VIEW_DIST); x++) {
+                color_t c = colorgrid[x][y];
+                if(c < 0 || c >= N_COLORS) {
+                    slog << "bad color";
+                    return;
+                }
+                if(m == 0)
+                    slog << char(c<10?48+c:96+c-9);
+                if(m == 1)
+                    slog << "STRW"[colortypes[c]];
+                if(m == 2)
+                    slog << char(colortypes[c] == C_WALL ? 'w' 
+                            : destgrid[x][y].x == DEST_DEATH.x ? '!'
+                            : destgrid[x][y].x == DEST_GOAL.x ? 'G' 
+                            : '.');
+            }
+            slog << '\n';
+       }
+    }
+    
+    void printx() {
+        for(bot_t bot:bots) slog<<bot.position.x<<' ';
+        slog<<'\n';
+    }
 };
 
 view_t::view_t(board_t *b, coord_t p):
     pos(p),
-    board(*b) {}
+    board(*b) {} 
 
 color_t view_t::operator() (int x, int y) {
     if(abs(x) > VIEW_DIST || abs(y) > VIEW_DIST) {
@@ -307,11 +357,12 @@ color_t view_t::operator() (int x, int y) {
 }
 
 int rungame(player_t player) {
-    board_t b(player);
+    board_t b(player/*, 1421320494465294900LL*/);
     for(int i = 0; i < GAME_DURATION; i++) {
         if(i % 10000 == 0) {
             slog << "Turns:" << i << " Specimens: " << b.n_alive() 
                 << " Score: " << b.score() << '\n';
+b.printx();
         }
         b.runframe();
     }
