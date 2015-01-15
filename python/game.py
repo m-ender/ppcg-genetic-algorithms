@@ -184,12 +184,15 @@ def run():
                 population = 0
                 for c, specimens in board.specimens.items():
                     population += len(specimens)
-                print(str(int(turn_number*100/NUMBER_OF_TURNS))+"% "
-                      +str(time.time()-start)+" sec - "
-                      +str(total_points)+" points - Population: "+str(population)+" - "
-                      +"Fitness... Avg: "+str(TotalFitness/float(population))
-                      +". Max: "+str(MaxFitness)
-                      +". AllTimeMax: "+str(AllTimeMaxFitness))
+                print('{:3.0%} '.format(turn_number/NUMBER_OF_TURNS) +
+                      '{:5.4} sec '.format(time.time() - start) +
+                      '{: 5} pts '.format(total_points) +
+                      'Pop {: 5} '.format(population) +
+                      'Fit ' +
+                      'Avg {:7.2} '.format(TotalFitness/float(population)) +
+                      'Max {: 5} '.format(MaxFitness) +
+                      'AllTimeMax {: 5}'.format(AllTimeMaxFitness)
+                      )
         #Score remaining specimen
         for coordinate, specimen in board.specimens.items():
             if coordinate.at_finish():
