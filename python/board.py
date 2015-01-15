@@ -1,14 +1,12 @@
 from random import Random
-from coordinates import BOARD_HEIGHT, BOARD_WIDTH, Coordinate, UNSAFE_BOARD_WIDTH
+from coordinates import Coordinate
 from trap import trap_types, Trap
 from square import Square
 from sys import version_info
+from constants import BOARD_WIDTH, UNSAFE_BOARD_WIDTH, BOARD_HEIGHT, OUT_OF_BOUNDS_COLOR
 
 if version_info >= (3,):
     xrange = range
-
-OUT_OF_BOUNDS_COLOR = -1
-
 
 class Board(object):
     def __init__(self, seed, colors):
