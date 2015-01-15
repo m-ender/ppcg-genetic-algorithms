@@ -158,7 +158,7 @@ def run():
     player = Player.PLAYER_TYPE()
     game_records = []
     reproduction_counter = 0
-    display = Display(BOARD_HEIGHT, BOARD_WIDTH)
+    display = Display(BOARD_HEIGHT, BOARD_EXTENDED_WIDTH)
     for board_number in xrange(NUMBER_OF_BOARDS):
         global TotalFitness, MaxFitness, AllTimeMaxFitness
         AllTimeMaxFitness = 0
