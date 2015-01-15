@@ -8,6 +8,10 @@ BOARD_HEIGHT = 15
 
 OUT_OF_BOUNDS_COLOR = -1
 
+NUMBER_OF_KILLERS = 1
+NUMBER_OF_TELEPORTERS = 1
+NUMBER_OF_WALLS = 1
+
 from board import Board
 from random import Random
 from specimen import Specimen
@@ -31,9 +35,9 @@ WALL_COLOR = (128, 128, 128)
 
 #Pick one of the following:
 #from graphical_display import Display  #Requires pygame
-from tkinter_display import Display #Requires tkinter
+#from tkinter_display import Display #Requires tkinter
 #from text_display import Display
-#from no_display import Display
+from no_display import Display
 
 
 NUMBER_OF_BOARDS = 1
