@@ -18,12 +18,12 @@ def sanitized(board):
                          for coordinate in next_squares]
             teleported = [board.get_square(neighbor).teleport + neighbor
                           for neighbor in neighbors]
-            if any([square.at_finish() or square in safe_squares
-                    for square in teleported]):
-                safe_squares.append(start_coordinate)
-                break
             alive = [square for square in teleported
                      if not board.get_square(square).killer]
+            if any([square.at_finish() or square in safe_squares
+                    for square in alive]):
+                safe_squares.append(start_coordinate)
+                break
             unvisited = [square for square in alive
                          if square not in visited_squares]
             if len(unvisited) == 0:
