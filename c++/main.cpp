@@ -20,5 +20,5 @@ coord_t lcplayer(dna_t d, view_t v) {
 }
 
 int main() {
-    runsimulation(lcplayer);
+    slog << "Average score: " << runsimulation(lcplayer);
 }

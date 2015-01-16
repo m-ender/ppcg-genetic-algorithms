@@ -12,7 +12,6 @@ const int N_COLORS = N_COLORS_SAFE + N_COLORS_TELE +
     N_COLORS_TRAP + N_COLORS_WALL;
 
 class board_t;
-class board_t;
 
 typedef int color_t;
 const color_t OUT_OF_BOUNDS = -1;
@@ -52,8 +51,6 @@ struct bot_t {
 
 
 const int maxdist = VIEW_DIST > TELE_DIST ? VIEW_DIST: TELE_DIST;
-const int gridh = GRID_Y + 2*maxdist;
-const int gridw = GRID_X + 2*maxdist;
 
 class view_t {
 private:
@@ -134,15 +131,14 @@ class board_t {
         for(int x = 0; x <= GRID_X; x++) destgrid[x][GRID_Y+1] = DEST_DEATH;
         for(int y = 1; y <= GRID_Y; y++) destgrid[0][y] = DEST_DEATH;
 
-        bool (*tmp)[GRID_Y+1] = new bool[GRID_X+1][GRID_Y+1];
+        bool tmp[GRID_X+1][GRID_Y+1];
 
         do {  //loop until grid is solvable
             for(int x = 1; x < GRID_X; x++)
                 for(int y = 1; y <= GRID_Y; y++)
                     colorgrid[x][y] = randint(N_COLORS);
-        
 
-            memset(tmp, 0, (GRID_X+1) * sizeof(*tmp));
+            memset(tmp, 0, sizeof(tmp));
             //determine trap, tele vectors
             coord_t offset[N_COLORS];
             for(int i = 0; i < N_COLORS; i++) {
@@ -164,7 +160,7 @@ class board_t {
                     color_t colr = colorgrid[x][y];
                     switch(colortypes[colr]) {
                       case C_TRAP: {
-                        coord_t target = (coord_t){x, y} + offset[colr];
+                        coord_t target = coord_t{x, y} + offset[colr];
                         if(target.x > 0 && target.x <= GRID_X && target.y > 0 && target.y <= GRID_Y) {
                             tmp[target.x][target.y] = true;
                         }
@@ -179,7 +175,7 @@ class board_t {
                 for(int y = 1; y <= GRID_Y; y++) {
                     coord_t end;
                     if(colortypes[colorgrid[x][y]] == C_TELE) {
-                        end = (coord_t){x, y} + offset[colorgrid[x][y]];
+                        end = coord_t{x, y} + offset[colorgrid[x][y]];
                         if(end.x < 1 || end.y < 1 || end.y > GRID_Y) end = DEST_DEATH;
                     } else {
                         end = {x, y};
@@ -197,7 +193,7 @@ class board_t {
             }
 printgrid(0);printgrid(1);printgrid(2);
         } while(!calcsolvability());
-        delete tmp;
+
     }
     
     unsigned calcsolvability() {
@@ -289,7 +285,9 @@ public:
         }
         if(++spawntimer == SPAWN_PERIOD) {
             spawntimer = 0;
-            breed();
+            for(int n = SPAWN_AMOUNT; n--; ) {
+                breed();
+            }
         }
     }
     
@@ -315,19 +313,27 @@ public:
     }
     
     void printgrid(int m) {
-        for(int y = 1; y <= GRID_Y; y++) {
-            for(int x = 1; x < GRID_X + (m==2?1:VIEW_DIST); x++) {
-                color_t c = colorgrid[x][y];
-                if(c < 0 || c >= N_COLORS) {
-                    slog << "bad color";
-                    return;
+        bool m2 = m == 2;
+        for(int y = m2?0:1; y <= GRID_Y+m2; y++) {
+            for(int x = m2?0:1; x < GRID_X + (m2?1:VIEW_DIST); x++) {
+                color_t c;
+                colortype_t t;
+                if (x>0&&x<GRID_X+VIEW_DIST&&y>0&&y<=GRID_Y) {
+                    c = colorgrid[x][y];
+                    if(c < -0 || c >= N_COLORS) {
+                        slog << "bad color";
+                        return;
+                    }
+                    t = colortypes[c];
+                } else {
+                    t = C_SAFE;
                 }
                 if(m == 0)
                     slog << char(c<10?48+c:96+c-9);
                 if(m == 1)
-                    slog << "STRW"[colortypes[c]];
+                    slog << "STRW"[t];
                 if(m == 2)
-                    slog << char(colortypes[c] == C_WALL ? 'w' 
+                    slog << char(t == C_WALL ? 'w' 
                             : destgrid[x][y].x == DEST_DEATH.x ? '!'
                             : destgrid[x][y].x == DEST_GOAL.x ? 'G' 
                             : '.');
@@ -359,7 +365,7 @@ color_t view_t::operator() (int x, int y) {
 int rungame(player_t player) {
     board_t b(player/*, 1421320494465294900LL*/);
     for(int i = 0; i < GAME_DURATION; i++) {
-        if(i % 10000 == 0) {
+        if(i % 1000 == 0) {
             slog << "Turns:" << i << " Specimens: " << b.n_alive() 
                 << " Score: " << b.score() << '\n';
 b.printx();
