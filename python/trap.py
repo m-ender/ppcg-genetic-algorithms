@@ -1,7 +1,7 @@
 import coordinates
 from sys import version_info
 
-from constants import NUMBER_OF_KILLERS, NUMBER_OF_TELEPORTERS, NUMBER_OF_WALLS, MAX_TELEPORT_DISTANCE
+from constants import NUMBER_OF_KILLERS, NUMBER_OF_TELEPORTERS, NUMBER_OF_WALLS, MAX_TELEPORT_RADIUS
 
 if version_info >= (3,):
     xrange = range
@@ -33,10 +33,10 @@ class DeathTrap(Trap):
 
 class TeleportationTrap(Trap):
     possible_directions = [coordinates.Coordinate(x,y)
-                           for x in xrange(-MAX_TELEPORT_DISTANCE,
-                                           MAX_TELEPORT_DISTANCE + 1)
-                           for y in xrange(-MAX_TELEPORT_DISTANCE,
-                                           MAX_TELEPORT_DISTANCE + 1)
+                           for x in xrange(-MAX_TELEPORT_RADIUS,
+                                           MAX_TELEPORT_RADIUS + 1)
+                           for y in xrange(-MAX_TELEPORT_RADIUS,
+                                           MAX_TELEPORT_RADIUS + 1)
                            if x != 0 or y != 0
                            ]
     max_traps = NUMBER_OF_TELEPORTERS
