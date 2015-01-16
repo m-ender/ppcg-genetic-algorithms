@@ -1,8 +1,4 @@
-
-UNSAFE_BOARD_WIDTH = 50
-BOARD_WIDTH = 55
-BOARD_HEIGHT = 15
-
+from constants import UNSAFE_BOARD_WIDTH, BOARD_HEIGHT
 
 class Coordinate():
     def __init__(self, x, y):

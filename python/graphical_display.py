@@ -2,8 +2,7 @@ import pygame
 import random
 import sys
 
-TITLE = "The Genetic Rat Race"
-CELL_SCALAR = 4
+from constants import CELL_SCALAR, TITLE
 
 random = random.Random()
 

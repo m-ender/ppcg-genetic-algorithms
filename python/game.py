@@ -1,54 +1,10 @@
-from __future__ import print_function
+from constants import *
 
-from board import Board
-from random import Random
-from specimen import Specimen
-import player as Player
-import sys
-import trap
-import coordinates
-import time
+random = Random()
 
-#Pick one of the following:
-#from graphical_display import Display  #Requires pygame
-#from tkinter_display import Display #Requires tkinter
-#from text_display import Display
-from no_display import Display
-
-
-if sys.version_info >= (3,):
-    xrange = range
-
-NUMBER_OF_BOARDS = 1
-BOARD_WIDTH = coordinates.BOARD_WIDTH
-BOARD_HEIGHT = coordinates.BOARD_HEIGHT
-
-NUMBER_OF_SAFE_COLORS = 10
-NUMBER_OF_COLORS = sum([trap_type.max_traps for trap_type in trap.trap_types])\
-                   + NUMBER_OF_SAFE_COLORS
-
-NUMBER_OF_TURNS = 10000
-
-INITIAL_SPECIMENS = 15
-SPECIMEN_LIFESPAN = 100
-REPRODUCTION_RATE = 10
-NUM_PARENTS = 2
-
-DNA_LENGTH = 50
-DNA_MAX_VALUE = (1 << DNA_LENGTH) - 1
-DNA_CROSSOVER_RATE = .1
-DNA_MUTATION_RATE = .01
-
-VISION_WIDTH = 5
-VISION_DISTANCE = int(VISION_WIDTH/2)
-VISION = [[coordinates.Coordinate(x, y)
-          for x in xrange(-VISION_DISTANCE, VISION_DISTANCE+1)]
-          for y in xrange(VISION_DISTANCE, -VISION_DISTANCE-1, -1)]
-
-RANDOM_SEED = 13722829
-
-
-random = Random(RANDOM_SEED)
+TotalFitness = 0
+MaxFitness = 0
+AllTimeMaxFitness = 0
 
 def sanitized(board):
     safe_squares = []
@@ -75,8 +31,6 @@ def sanitized(board):
             visited_squares.update(unvisited)
             next_squares = set(unvisited)
     return safe_squares
-
-
 
 
 def initialize_board():
@@ -145,11 +99,19 @@ def score_specimen(coordinate, specimen):
 
 
 def breed(board, current_turn):
+    global TotalFitness, MaxFitness, AllTimeMaxFitness
     #Calculate the total height of all of the specimens
     total = 0
+    MaxFitness = 0
     for coordinate, specimens in board.specimens.items():
         for specimen in specimens:
-            total += score_specimen(coordinate, specimen)
+            fitness = score_specimen(coordinate, specimen)
+            if fitness > MaxFitness:
+                MaxFitness = fitness
+                if fitness > AllTimeMaxFitness:
+                    AllTimeMaxFitness = fitness
+            total += fitness
+    TotalFitness = total
     #Pick random heights from the total height to find a parent
     selected_specimens = []
     for __ in xrange(NUM_PARENTS):
@@ -194,10 +156,13 @@ def check_for_life(board):
 
 def run():
     player = Player.PLAYER_TYPE()
-    total_points = 0
+    game_records = []
     reproduction_counter = 0
-    display = Display(BOARD_HEIGHT, BOARD_WIDTH)
+    display = Display(BOARD_HEIGHT, BOARD_EXTENDED_WIDTH)
     for board_number in xrange(NUMBER_OF_BOARDS):
+        global TotalFitness, MaxFitness, AllTimeMaxFitness
+        AllTimeMaxFitness = 0
+        total_points = 0
         print("Running board #"+str(board_number+1)+"/"+str(NUMBER_OF_BOARDS))
         board = initialize_board()
         start = time.time()
@@ -219,14 +184,25 @@ def run():
                 population = 0
                 for c, specimens in board.specimens.items():
                     population += len(specimens)
-                print(str(int(turn_number*100/NUMBER_OF_TURNS))+"% "
-                      +str(time.time()-start)+" sec - "
-                      +str(total_points)+" points - Population: "+str(population))
+                print('{:3.0%} '.format(turn_number/NUMBER_OF_TURNS) +
+                      '{:5.4}s '.format(time.time() - start) +
+                      '{: 10} pts '.format(total_points) +
+                      'Pop {: 5} '.format(population) +
+                      'Fit ' +
+                      'Avg {:7.3} '.format(TotalFitness/float(population)) +
+                      'Max {: 5} '.format(MaxFitness) +
+                      'AllTimeMax {: 5}'.format(AllTimeMaxFitness)
+                      )
         #Score remaining specimen
         for coordinate, specimen in board.specimens.items():
             if coordinate.at_finish():
                 total_points += len(specimen)
-    print("Your bot got "+str(total_points)+" points")
+        print("Your bot got "+str(total_points)+" points")
+        game_records.append(total_points)
+    if NUMBER_OF_BOARDS > 1:
+        print("=========================================")
+        print("Individual scores: "+str(game_records))
+        print("On average, your bot got "+str(sum(game_records)/float(NUMBER_OF_BOARDS))+" points")
 
 
 if __name__ == "__main__":
