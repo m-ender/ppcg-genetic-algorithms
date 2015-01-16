@@ -631,7 +631,8 @@ namespace ppcggacscontroller
 				s.age = 0;
 			}
 			
-			public void runSession()
+			// returns the score (mean score)
+			public decimal runSession()
 			{
 				int oldScore = 0;
 				
@@ -653,8 +654,10 @@ namespace ppcggacscontroller
 				
 				Console.WriteLine("Scores: " + string.Join(", ", scores));
 				
-				Console.WriteLine("Average score is " + (decimal)plyr.score / (decimal)consts.repeatCount);
-				Console.ReadKey(true);
+				decimal mean = (decimal)plyr.score / (decimal)consts.repeatCount;
+				Console.WriteLine("Average score is " + mean);
+				
+				return mean;
 			}
 			
 			private void runGame()
@@ -728,22 +731,24 @@ namespace ppcggacscontroller
 				{
 					int n = consts.reproductionRate;
 					
-					Specimen[] breeders = grab(n * 2);
-					for (int i = 0; i < n * 2; i += 2)
-						addSpecimen(breeders[i].cross(consts, rnd, breeders[i + 1]));
+					for (int i = 0; i < n; i++)
+					{
+						Specimen[] breeders = grabDistinct(2);
+						addSpecimen(breeders[0].cross(consts, rnd, breeders[1]));
+					}
 				}
 			}
 			
-			private Specimen[] grab(int count)
+			private Specimen[] grabDistinct(int count)
 			{
-				if (specimens.Count == 0)
+				if (specimens.Count < count)
 					return null;
 				
 				Specimen[] res = new Specimen[count];
 				
 				long maxRnd = specimens.Sum(s => s.fitness);
 				
-				while (count-- > 0)
+				while (count > 0)
 				{
 					long idx = rndLong(rnd, maxRnd);
 					
@@ -754,7 +759,10 @@ namespace ppcggacscontroller
 						
 						if (idx < f)
 						{
-							res[count] = s;
+							if (Array.IndexOf(res, s) != -1)
+								break; // go again
+							
+							res[--count] = s;
 							break;
 						}
 						
@@ -775,7 +783,7 @@ namespace ppcggacscontroller
 			while (dm > 0)
 			{
 				dm /= 2;
-				bmask = bmask << 1 + 1;
+				bmask = (bmask << 1) + 1;
 			}
 			
 			byte[] bytes = new byte[8];
@@ -785,7 +793,7 @@ namespace ppcggacscontroller
 			
 			long cur = 0;
 			for (int i = 0; i < 8; i++)
-				cur = cur << 8 + bytes[i];
+				cur = (cur << 8) + bytes[i];
 			
 			cur &= bmask;
 			
