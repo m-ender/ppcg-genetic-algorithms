@@ -12,7 +12,7 @@ def sanitized(board):
         start_coordinate = coordinates.Coordinate(0, start_y)
         next_squares = {start_coordinate}
         visited_squares = set(next_squares)
-        while True:
+        for __ in xrange(SPECIMEN_LIFESPAN):
             neighbors = [direction+coordinate
                          for direction in coordinates.directions
                          for coordinate in next_squares]
