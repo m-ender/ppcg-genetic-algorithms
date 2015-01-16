@@ -22,7 +22,7 @@ class Player(object):
         return Coordinate(1, 0)
 
     def vision_at(self, x, y):
-        return self.vision[2+x][2+y]
+        return self.vision[2+y][2+x]
 
 class ForwardPlayer(Player):
     def turn(self):
@@ -36,21 +36,23 @@ class RandomPlayer(Player):
 class LinearCombinationPlayer(Player):
     def __init__(self):
         Player.__init__(self)
-        self.coords = [#Coordinate(-1,-1),
-                       #Coordinate( 0,-1),
+        self.coords = [Coordinate(-1,-1),
+                       Coordinate( 0,-1),
                        Coordinate( 1, 0),
                        Coordinate( 1,-1),
-                       #Coordinate(-1, 0),
-                       #Coordinate( 0, 0),
-                       #Coordinate(-1, 1),
-                       #Coordinate( 0, 1),
+                       Coordinate(-1, 0),
+                       Coordinate( 0, 0),
+                       Coordinate(-1, 1),
+                       Coordinate( 0, 1),
                        Coordinate( 1, 1)]
         self.n_moves = len(self.coords)
 
     def turn(self):
+        restricted_coords = [c for c in self.coords if self.vision_at(c.x,c.y)>-1]
+        restricted_n_moves = len(restricted_coords)
         s = 0
         for i in range(25):
             s += self.bit_range(2*i,2*i+2)*self.vision_at(int(i/5)-2, i%5-2)
-        return self.coords[s%self.n_moves]
+        return restricted_coords[s%restricted_n_moves]
 
 PLAYER_TYPE = LinearCombinationPlayer
