@@ -320,7 +320,7 @@ public:
                 colortype_t t;
                 if (x>0&&x<GRID_X+VIEW_DIST&&y>0&&y<=GRID_Y) {
                     c = colorgrid[x][y];
-                    if(c < -0 || c >= N_COLORS) {
+                    if(c < 0 || c >= N_COLORS) {
                         slog << "bad color";
                         return;
                     }
@@ -357,15 +357,16 @@ color_t view_t::operator() (int x, int y) {
         slog << "Attempted to view square out of range\n";
         return OUT_OF_BOUNDS;
     }
-    if(x < 1 || y < 1 || y > GRID_Y)
+	int X = pos.x + x, Y = pos.y + y;
+    if(X < 1 || Y < 1 || Y > GRID_Y)
         return OUT_OF_BOUNDS;
-    return board.colorgrid[pos.x+x][pos.y+y];
+    return board.colorgrid[X][Y];
 }
 
 int rungame(player_t player) {
     board_t b(player/*, 1421320494465294900LL*/);
     for(int i = 0; i < GAME_DURATION; i++) {
-        if(i % 1000 == 0) {
+        if(i % N_TURNS_PRINTINFO == 0) {
             slog << "Turns:" << i << " Specimens: " << b.n_alive() 
                 << " Score: " << b.score() << '\n';
 b.printx();
