@@ -1,4 +1,10 @@
-﻿using System;
+﻿/**
+ * Couple of test players
+ * 
+ *
+ */
+
+using System;
 using System.Linq;
 
 namespace ppcggacscontroller
@@ -18,7 +24,9 @@ namespace ppcggacscontroller
 		
 		public static void Main(string[] args)
 		{
+			// create a game instance, passing it your GameLogic.PlayerDel
 			GameLogic.Game g = new GameLogic.Game(fgrr);
+			// run it
 			g.runSession();
 			
 			Console.ReadKey(true);
