@@ -18,6 +18,9 @@ class Player(object):
     def bit_range(self, start, stop):
         return (self.dna >> start) & ((1 << (stop-start)) - 1)
 
+    def bit_chunk(self, start, length):
+        return (self.dna >> start) & ((1 << length) - 1)
+
     def turn(self):
         return Coordinate(1, 0)
 
@@ -36,14 +39,14 @@ class RandomPlayer(Player):
 class LinearCombinationPlayer(Player):
     def __init__(self):
         Player.__init__(self)
-        self.coords = [Coordinate(-1,-1),
-                       Coordinate( 0,-1),
+        self.coords = [#Coordinate(-1,-1),
+                       #Coordinate( 0,-1),
                        Coordinate( 1, 0),
                        Coordinate( 1,-1),
-                       Coordinate(-1, 0),
-                       Coordinate( 0, 0),
-                       Coordinate(-1, 1),
-                       Coordinate( 0, 1),
+                       #Coordinate(-1, 0),
+                       #Coordinate( 0, 0),
+                       #Coordinate(-1, 1),
+                       #Coordinate( 0, 1),
                        Coordinate( 1, 1)]
         self.n_moves = len(self.coords)
 
@@ -55,4 +58,26 @@ class LinearCombinationPlayer(Player):
             s += self.bit_range(2*i,2*i+2)*self.vision_at(int(i/5)-2, i%5-2)
         return restricted_coords[s%restricted_n_moves]
 
-PLAYER_TYPE = LinearCombinationPlayer
+class ColorScorePlayer(Player):
+    def __init__(self):
+        Player.__init__(self)
+        self.coords = [#Coordinate(-1,-1),
+                       #Coordinate( 0,-1),
+                       Coordinate( 1, 0),
+                       Coordinate( 1,-1),
+                       #Coordinate(-1, 0),
+                       #Coordinate( 0, 0),
+                       #Coordinate(-1, 1),
+                       #Coordinate( 0, 1),
+                       Coordinate( 1, 1)]
+        self.n_moves = len(self.coords)
+
+    def turn(self):
+        max_score = max([self.bit_chunk(3*self.vision_at(c.x, c.y), 3) for c in self.coords if self.vision_at(c.x, c.y)>=0])
+        restricted_coords = [c for c in self.coords if self.vision_at(c.x, c.y)>=0 and self.bit_chunk(3*self.vision_at(c.x,c.y), 3) == max_score]
+
+        return random.choice(restricted_coords)
+
+
+
+PLAYER_TYPE = ColorScorePlayer
