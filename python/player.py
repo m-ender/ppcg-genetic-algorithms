@@ -73,8 +73,8 @@ class ColorScorePlayer(Player):
         self.n_moves = len(self.coords)
 
     def turn(self):
-        max_score = max([self.bit_chunk(3*self.vision_at(c.x, c.y), 3) for c in self.coords if self.vision_at(c.x, c.y)>=0])
-        restricted_coords = [c for c in self.coords if self.vision_at(c.x, c.y)>=0 and self.bit_chunk(3*self.vision_at(c.x,c.y), 3) == max_score]
+        max_score = max([self.bit_chunk(6*self.vision_at(c.x, c.y), 6) for c in self.coords if self.vision_at(c.x, c.y)>=0])
+        restricted_coords = [c for c in self.coords if self.vision_at(c.x, c.y)>=0 and self.bit_chunk(6*self.vision_at(c.x,c.y), 6) == max_score]
 
         return random.choice(restricted_coords)
 
