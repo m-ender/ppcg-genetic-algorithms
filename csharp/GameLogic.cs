@@ -72,7 +72,8 @@ namespace ppcggacscontroller
 			
 			public int n {get; private set;}
 			public ColorType type {get; private set;}
-			public int tox, toy; // target offsets
+			public int tox {get; private set;} // target offsets
+			public int toy {get; private set;}
 			
 			public Color(int nN, ColorType typeN)
 			{
@@ -89,15 +90,28 @@ namespace ppcggacscontroller
 		
 		public interface IView
 		{
+			/// <summary>
+			/// Look up the color at the given offset from my position
+			/// </summary>
 			int this[int ox, int oy] {get;}
+			
+			/// <summary>
+			/// The x-dimension of the view (the view spans from -xd to xd)
+			/// </summary>
+			int xd {get;}
+			
+			/// <summary>
+			/// The y-dimension of the view (the view spans from -yd to yd)
+			/// </summary>
+			int yd {get;}
 		}
 		
 		// this one actually needs to be public
 		private class View : IView
 		{
 			private int[,] colors;
-			private int xd;
-			private int yd;
+			public int xd {get; private set;}
+			public int yd {get; private set;}
 			
 			public View(GameConstants consts)
 			{
@@ -140,10 +154,22 @@ namespace ppcggacscontroller
 			}
 		}
 		
-		public interface IGenome
+		public interface IGenome : IEnumerable<bool>
 		{
+			/// <summary>
+			/// Look up the bit at the given index
+			/// </summary>
 			bool this[int idx] {get;}
+			
+			/// <summary>
+			/// Grab a clone of the bit array used internally
+			/// </summary>
 			BitArr getBitArray();
+			
+			/// <summary>
+			/// The length of the Genome
+			/// </summary>
+			int length {get;}
 		}
 		
 		private class Genome : IGenome
@@ -200,6 +226,25 @@ namespace ppcggacscontroller
 					return barr[idx];
 				}
 			}
+			
+			public int length
+			{
+				get
+				{
+					return barr.Length;
+				}
+			}
+			
+			System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+			{
+				return GetEnumerator();
+			}
+			
+			public IEnumerator<bool> GetEnumerator()
+			{
+				foreach (bool b in barr)
+					yield return b;
+			}
 		}
 		
 		private class Specimen
@@ -213,7 +258,7 @@ namespace ppcggacscontroller
 			public long fitness
 			{
 				get
-				{
+				{ // positions are 0-indexed internally
 					return pos.x + 1 + pos.brd.width * score;
 				}
 			}
@@ -247,9 +292,13 @@ namespace ppcggacscontroller
 		{
 			private class Cell
 			{
+				// location of this Cell
 				public Position truePos {get; private set;}
+				// where a Specimen moving onto this Cell should be moved to
 				public Position movePos {get; private set;}
+				// whether a Specimen that ends up on this Cell is a dead Specimen
 				public bool lethal {get; private set;}
+				// the Color of the Cell
 				public Color trueColor {get; private set;}
 				
 				public Cell(Position truePosN, Color trueColorN)
@@ -283,7 +332,7 @@ namespace ppcggacscontroller
 				
 				public Position moveFrom(Position ipos)
 				{
-					if (movePos == null)
+					if (movePos == null) // we are a wall, or the like
 						return ipos;
 					else
 						return movePos;
@@ -441,7 +490,7 @@ namespace ppcggacscontroller
 						ty += c.toy;
 					}
 					
-					if (indicesInBounds(tx + c.tox, ty + c.toy))
+					if (indicesInBounds(tx, ty))
 					{
 						grid[tx, ty].apply(c);
 					}
@@ -507,7 +556,7 @@ namespace ppcggacscontroller
 				return false;
 			}
 			
-			// evaluate a move onto this position (i.e. end of turn)
+			// evaluate a move onto this position
 			public SpecimenState move(Position ipos, int ox, int oy, out Position rpos)
 			{
 				if (Math.Abs(ox) > 1 || Math.Abs(oy) > 1)
@@ -687,7 +736,7 @@ namespace ppcggacscontroller
 				}
 			}
 			
-			static int bestX = 1;
+			static int bestX = 0;
 			
 			private void move()
 			{
@@ -724,10 +773,10 @@ namespace ppcggacscontroller
 					}
 				}
 			}
-				
+			
 			private void breed()
 			{
-				if (specimens.Count > 1)
+				if (specimens.Count >= 2)
 				{
 					int n = consts.reproductionRate;
 					
@@ -746,7 +795,7 @@ namespace ppcggacscontroller
 				
 				Specimen[] res = new Specimen[count];
 				
-				long maxRnd = specimens.Sum(s => s.fitness);
+				long maxRnd = specimens.Sum(s => s.fitness); // want to factor this out if we can
 				
 				while (count > 0)
 				{
@@ -803,4 +852,4 @@ namespace ppcggacscontroller
 			return cur;
 		}
 	}
-}    
+}
