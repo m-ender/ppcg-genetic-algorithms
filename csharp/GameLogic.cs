@@ -464,8 +464,15 @@ namespace ppcggacscontroller
 				// add tele colors
 				for (int i = 0; i < consts.teleColCount; i += 2)
 				{
-					int ox = rnd.Next(-consts.teleDist, consts.teleDist + 1); // no, we can't just take a positive, that would bias towards 0
+					// I am lazy
+				reo:
+					int ox = rnd.Next(-consts.teleDist, consts.teleDist + 1);
 					int oy = rnd.Next(-consts.teleDist, consts.teleDist + 1);
+					
+					if (ox == 0 && oy == 0) // no thanks
+						goto reo;
+					
+					Console.WriteLine(ox + " " + oy);
 					
 					Color c;
 					
