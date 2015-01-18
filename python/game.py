@@ -159,8 +159,9 @@ def check_for_life(board):
     if len(board.specimens) >= NUM_PARENTS:
         return True
     population = 0
-    for cell in board.specimens:
-        population += len(cell)
+    for c, specimens in board.specimens.items():
+        population += len(specimens)
+        print('POP:', population)
         if population >= NUM_PARENTS:
             return True
 

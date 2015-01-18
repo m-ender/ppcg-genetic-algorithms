@@ -27,9 +27,11 @@ class Player(object):
     def vision_at(self, x, y):
         return self.vision[2+y][2+x]
 
+
 class ForwardPlayer(Player):
     def turn(self):
         return Coordinate(1, 0)
+
 
 class RandomPlayer(Player):
     def turn(self):
@@ -58,6 +60,7 @@ class LinearCombinationPlayer(Player):
             s += self.bit_range(2*i,2*i+2)*self.vision_at(int(i/5)-2, i%5-2)
         return restricted_coords[s%restricted_n_moves]
 
+
 class ColorScorePlayer(Player):
     def __init__(self):
         Player.__init__(self)
@@ -78,6 +81,23 @@ class ColorScorePlayer(Player):
 
         return random.choice(restricted_coords)
 
+
+class LemmingPlayer(Player):
+    def __init__(self):
+        Player.__init__(self)
+        self.coords = [Coordinate(-1,-1),
+                       #Coordinate( 0,-1),
+                       Coordinate( 1, 0),
+                       #Coordinate( 1,-1),
+                       Coordinate(-1, 0),
+                       #Coordinate( 0, 0),
+                       Coordinate(-1, 1),
+                       #Coordinate( 0, 1),
+                       #Coordinate( 1, 1)
+                       ]
+
+    def turn(self):
+        return random.choice(self.coords)
 
 
 PLAYER_TYPE = ColorScorePlayer
