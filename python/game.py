@@ -156,7 +156,13 @@ def breed(board, current_turn, number_of_offspring):
 
 
 def check_for_life(board):
-    return len(board.specimens) > NUM_PARENTS
+    if len(board.specimens) >= NUM_PARENTS:
+        return True
+    population = 0
+    for cell in board.specimens:
+        population += len(cell)
+        if population >= NUM_PARENTS:
+            return True
 
 
 def run():
