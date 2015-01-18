@@ -47,7 +47,7 @@ def initialize_board():
     #add specimens
     for __ in xrange(INITIAL_SPECIMENS):
         board.add_specimen(
-            Specimen(random.getrandbits(DNA_LENGTH), 0),
+            Specimen(random.getrandbits(GENOME_LENGTH), 0),
             random.choice(safe_squares))
 
     return board
@@ -75,7 +75,7 @@ def take_turn(board, turn_number, player):
             vision = [[board.get_color(coordinate+offset)
                       for offset in line] for line in VISION]
             #move specimen
-            direction = player.take_turn(specimen.dna, vision)
+            direction = player.take_turn(specimen.genome, vision)
             new_location = coordinate+direction
             new_square = board.get_square(new_location)
             if new_square.wall:
@@ -136,21 +136,21 @@ def breed(board, current_turn, number_of_offspring):
     for i in xrange(number_of_offspring):
         selected_specimens = parent_groups[i]
         current_parent = random.choice(selected_specimens)
-        new_dna = 0
-        for position in reversed(xrange(DNA_LENGTH)):
+        new_genome = 0
+        for position in reversed(xrange(GENOME_LENGTH)):
             #randomly switch parents
-            if random.random() < DNA_CROSSOVER_RATE:
+            if random.random() < GENOME_CROSSOVER_RATE:
                 current_parent = random.choice(selected_specimens)
-            #copy over dna from the chosen parent
+            #copy over genome from the chosen parent
             bit = current_parent.bit_at(position)
             #mutate some of that data
-            if random.random() < DNA_MUTATION_RATE:
+            if random.random() < GENOME_MUTATION_RATE:
                 bit = -bit+1
-            new_dna = (new_dna << 1) + bit
-        assert new_dna <= DNA_MAX_VALUE
-        #create specimen with new dna
+            new_genome = (new_genome << 1) + bit
+        assert new_genome <= GENOME_MAX_VALUE
+        #create specimen with new genome
         board.add_specimen(
-            Specimen(new_dna, current_turn),
+            Specimen(new_genome, current_turn),
             random.choice(board.starting_squares)
             )
 
