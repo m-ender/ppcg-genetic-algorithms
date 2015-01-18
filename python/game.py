@@ -39,7 +39,7 @@ def initialize_board():
     while True:
         board = Board(random.randrange(0, 10000000), colors)
         safe_squares = sanitized(board)
-        if safe_squares:
+        if len(safe_squares) >= 10:
             board.starting_squares = safe_squares
             break
         print("Bad board, retrying...")
