@@ -46,6 +46,7 @@ namespace ppcggacscontroller
 			// specimens
 			public int maxAge = 100;
 			public int reproductionRate = 10;
+			public int fitnessScoreCoef = 50;
 			
 			// views
 			public int viewDimX = 2;
@@ -70,8 +71,7 @@ namespace ppcggacscontroller
 		// sue me
 		private class Color
 		{
-			public static Color OutOfBoundsDead = new Color(-1, ColorType.Trap);
-			public static Color OutOfBoundsAlive = new Color(-1, ColorType.Safe);
+			public static Color OutOfBounds = new Color(-1, ColorType.Trap);
 			
 			public int n {get; private set;}
 			public ColorType type {get; private set;}
@@ -255,6 +255,7 @@ namespace ppcggacscontroller
 			public Board.Position pos;
 			public int age;
 			public int score;
+			private int fitnessScoreCoef;
 			
 			public Genome g {get; private set;}
 			
@@ -262,13 +263,14 @@ namespace ppcggacscontroller
 			{
 				get
 				{ // positions are 0-indexed internally
-					return pos.x + 1 + pos.brd.width * score;
+					return pos.x + 1 + fitnessScoreCoef * score;
 				}
 			}
 			
-			public Specimen(Genome gN)
+			public Specimen(Genome gN, GameConstants consts)
 			{
 				g = gN;
+				fitnessScoreCoef = consts.fitnessScoreCoef;
 			}
 			
 			public Genome cross(GameConstants consts, Random rnd, Specimen other)
@@ -444,28 +446,53 @@ namespace ppcggacscontroller
 				// create colorTable
 				var colorCounts = new []
 				{
-					new { type = ColorType.Safe, count = consts.safeColCount, toxb = 0, toyb = 0 },
-					new { type = ColorType.Tele, count = consts.teleColCount, toxb = consts.teleDist, toyb = consts.teleDist },
-					new { type = ColorType.Trap, count = consts.trapColCount, toxb = consts.trapDist, toyb = consts.trapDist },
-					new { type = ColorType.Wall, count = consts.wallColCount, toxb = 0, toyb = 0 }
+					new { type = ColorType.Safe, count = consts.safeColCount, manual = false, toxb = 0, toyb = 0 },
+					new { type = ColorType.Tele, count = consts.teleColCount, manual = true,  toxb = consts.teleDist, toyb = consts.teleDist }, // we do these separately
+					new { type = ColorType.Trap, count = consts.trapColCount, manual = false, toxb = consts.trapDist, toyb = consts.trapDist },
+					new { type = ColorType.Wall, count = consts.wallColCount, manual = false, toxb = 0, toyb = 0 }
 				};
 				
 				colorTable = new Color[colorCounts.Sum(cc => cc.count)];
 				
-				Action<Color> assignColor = (c) =>
+				Func<int> nextColorId = () =>
 				{
 					int k;
-					while (colorTable[k = rnd.Next(0, colorTable.Length)] != null); // best pracice
-					colorTable[k] = c;
+					while (colorTable[k = rnd.Next(0, colorTable.Length)] != null); // best practise
+					return k;
 				};
 				
-				int ci = 0;
+				// add tele colors
+				for (int i = 0; i < consts.teleColCount; i += 2)
+				{
+					// I am lazy
+				reo:
+					int ox = rnd.Next(-consts.teleDist, consts.teleDist + 1);
+					int oy = rnd.Next(-consts.teleDist, consts.teleDist + 1);
+					
+					if (ox == 0 && oy == 0) // no thanks
+						goto reo;
+					
+					Console.WriteLine(ox + " " + oy);
+					
+					Color c;
+					
+					c = new Color(nextColorId(), ColorType.Tele, ox, oy);
+					colorTable[c.n] = c;
+					
+					c = new Color(nextColorId(), ColorType.Tele, -ox, -oy);
+					colorTable[c.n] = c;
+				}
+				
+				// add less picky colors
 				foreach (var cc in colorCounts)
 				{
+					if (cc.manual)
+						continue;
+					
 					for (int i = 0; i < cc.count; i++)
 					{
-						Color c = new Color(ci++, cc.type, rnd.Next(-cc.toxb, cc.toxb+1), rnd.Next(-cc.toyb, cc.toyb+1));
-						assignColor(c);
+						Color c = new Color(nextColorId(), cc.type, rnd.Next(-cc.toxb, cc.toxb+1), rnd.Next(-cc.toyb, cc.toyb+1));
+						colorTable[c.n] = c;
 					}
 				}
 				
@@ -658,10 +685,8 @@ namespace ppcggacscontroller
 			
 			public Color getColor(int x, int y)
 			{
-				if (x < 0 || y < 0 || y >= height)
-					return Color.OutOfBoundsDead;
-				else if (x >= width)
-					return Color.OutOfBoundsAlive;
+				if (x < 0 || y < 0 || y >= height || x >= width)
+					return Color.OutOfBounds;
 				else
 					return grid[x, y].trueColor;
 			}
@@ -711,7 +736,7 @@ namespace ppcggacscontroller
 			
 			private void addSpecimen(Genome g)
 			{
-				Specimen s = new Specimen(g);
+				Specimen s = new Specimen(g, consts);
 				resetSpecimen(s);
 				specimens.Add(s);
 			}
@@ -725,8 +750,6 @@ namespace ppcggacscontroller
 			// returns the score (mean score)
 			public decimal runSession()
 			{
-				int oldScore = 0;
-				
 				List<int> scores = new List<int>();
 				
 				for (int i = 0; i < consts.repeatCount; i++)
@@ -877,25 +900,34 @@ namespace ppcggacscontroller
 			{
 				if (specimens.Count >= 2)
 				{
-					int n = consts.reproductionRate;
+					Specimen[][] breeders = grabDistinctGrouped(consts.reproductionRate, 2);
 					
-					for (int i = 0; i < n; i++)
-					{
-						Specimen[] breeders = grabDistinct(2);
-						addSpecimen(breeders[0].cross(consts, rnd, breeders[1]));
-					}
+					foreach (Specimen[] breedingPair in breeders)
+						addSpecimen(breedingPair[0].cross(consts, rnd, breedingPair[1]));
 				}
 			}
 			
-			private Specimen[] grabDistinct(int count)
+			private Specimen[][] grabDistinctGrouped(int groups, int groupSize)
+			{
+				long maxRnd = specimens.Sum(s => s.fitness);
+				
+				Specimen[][] res = new GameLogic.Specimen[groups][];
+				
+				for (int i = 0; i < groups; i++)
+				{
+					res[i] = grabDistinctIndividuals(groupSize, maxRnd);
+				}
+				
+				return res;
+			}
+			
+			private Specimen[] grabDistinctIndividuals(int count, long maxRnd)
 			{
 				if (specimens.Count < count)
 					return null;
 				
 				Specimen[] res = new Specimen[count];
-				
-				long maxRnd = specimens.Sum(s => s.fitness); // want to factor this out if we can
-				
+								
 				while (count > 0)
 				{
 					long idx = rndLong(rnd, maxRnd);

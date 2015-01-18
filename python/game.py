@@ -47,7 +47,7 @@ def initialize_board():
     #add specimens
     for __ in xrange(INITIAL_SPECIMENS):
         board.add_specimen(
-            Specimen(random.getrandbits(DNA_LENGTH), 0),
+            Specimen(random.getrandbits(GENOME_LENGTH), 0),
             random.choice(safe_squares))
 
     return board
@@ -62,7 +62,7 @@ def take_turn(board, turn_number, player):
                 points += 1
                 new_start_coords = random.choice(board.starting_squares)
                 specimen.birth = turn_number
-                specimen.bonus_fitness += coordinates.UNSAFE_BOARD_WIDTH
+                specimen.bonus_fitness += BOARD_WIDTH
                 if new_start_coords in board.next_specimens:
                     board.next_specimens[new_start_coords].append(specimen)
                 else:
@@ -75,14 +75,15 @@ def take_turn(board, turn_number, player):
             vision = [[board.get_color(coordinate+offset)
                       for offset in line] for line in VISION]
             #move specimen
-            direction = player.take_turn(specimen.dna, vision)
+            direction = player.take_turn(specimen.genome, vision)
+            assert direction in coordinates.directions, 'illegal move ({},{})'.format(direction.x,direction.y)
             new_location = coordinate+direction
             new_square = board.get_square(new_location)
             if new_square.wall:
                 new_square = board.get_square(coordinate)
                 new_location = coordinate
             teleported = new_square.teleport+new_location
-            if board.get_square(teleported).killer and not coordinate.at_finish():
+            if board.get_square(teleported).killer:
                 continue
             if teleported in board.next_specimens:
                 board.next_specimens[teleported].append(specimen)
@@ -98,7 +99,7 @@ def score_specimen(coordinate, specimen):
     return coordinate.x + specimen.bonus_fitness + 1
 
 
-def breed(board, current_turn):
+def breed(board, current_turn, number_of_offspring):
     global TotalFitness, MaxFitness, AllTimeMaxFitness
     #Calculate the total height of all of the specimens
     total = 0
@@ -113,51 +114,61 @@ def breed(board, current_turn):
             total += fitness
     TotalFitness = total
     #Pick random heights from the total height to find a parent
-    selected_specimens = []
-    for __ in xrange(NUM_PARENTS):
-        count_down = random.randrange(total)
-        for coordinate, specimens in board.specimens.items():
-            for specimen in specimens:
-                if specimen in selected_specimens:
+    parent_groups = []
+    for __ in xrange(number_of_offspring):
+        selected_specimens = []
+        remaining_total = total
+        for __ in xrange(NUM_PARENTS):
+            count_down = random.randrange(remaining_total)
+            for coordinate, specimens in board.specimens.items():
+                for specimen in specimens:
+                    if specimen in selected_specimens:
+                        continue
+                    count_down -= score_specimen(coordinate, specimen)
+                    if count_down < 0:
+                        selected_specimens.append(specimen)
+                        remaining_total -= score_specimen(coordinate, specimen)
+                        break
+                else:
                     continue
-                count_down -= score_specimen(coordinate, specimen)
-                if count_down < 0:
-                    selected_specimens.append(specimen)
-                    total -= score_specimen(coordinate, specimen)
-                    break
-            else:
-                continue
-            break
-
-
-    #choose a random parent
-    current_parent = random.choice(selected_specimens)
-    new_dna = 0
-    for position in reversed(xrange(DNA_LENGTH)):
-        #randomly switch parents
-        if random.random() < DNA_CROSSOVER_RATE:
-            current_parent = random.choice(selected_specimens)
-        #copy over dna from the chosen parent
-        bit = current_parent.bit_at(position)
-        #mutate some of that data
-        if random.random() < DNA_MUTATION_RATE:
-            bit = -bit+1
-        new_dna = (new_dna << 1) + bit
-    assert new_dna <= DNA_MAX_VALUE
-    #create specimen with new dna
-    board.add_specimen(
-        Specimen(new_dna, current_turn),
-        random.choice(board.starting_squares))
+                break
+        parent_groups.append(selected_specimens)
+        
+    for i in xrange(number_of_offspring):
+        selected_specimens = parent_groups[i]
+        current_parent = random.choice(selected_specimens)
+        new_genome = 0
+        for position in reversed(xrange(GENOME_LENGTH)):
+            #randomly switch parents
+            if random.random() < GENOME_CROSSOVER_RATE:
+                current_parent = random.choice(selected_specimens)
+            #copy over genome from the chosen parent
+            bit = current_parent.bit_at(position)
+            #mutate some of that data
+            if random.random() < GENOME_MUTATION_RATE:
+                bit = -bit+1
+            new_genome = (new_genome << 1) + bit
+        assert new_genome <= GENOME_MAX_VALUE
+        #create specimen with new genome
+        board.add_specimen(
+            Specimen(new_genome, current_turn),
+            random.choice(board.starting_squares)
+            )
 
 
 def check_for_life(board):
-    return len(board.specimens) > NUM_PARENTS
+    if len(board.specimens) >= NUM_PARENTS:
+        return True
+    population = 0
+    for c, specimens in board.specimens.items():
+        population += len(specimens)
+        if population >= NUM_PARENTS:
+            return True
 
 
 def run():
     player = Player.PLAYER_TYPE()
     game_records = []
-    reproduction_counter = 0
     display = Display(BOARD_HEIGHT, BOARD_EXTENDED_WIDTH)
     for board_number in xrange(NUMBER_OF_BOARDS):
         global TotalFitness, MaxFitness, AllTimeMaxFitness
@@ -172,10 +183,7 @@ def run():
             if not check_for_life(board):
                 break
             # Reproduce
-            reproduction_counter += REPRODUCTION_RATE
-            while reproduction_counter >= 1:
-                reproduction_counter -= 1
-                breed(board, turn_number)
+            breed(board, turn_number, REPRODUCTION_RATE)
             #Draw tiles
             for coordinate in board.get_changed_cells():
                 display.draw_cell(coordinate, board)

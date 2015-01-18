@@ -36,8 +36,8 @@ TELEPORT_COLOR = (128, 128, 255)
 WALL_COLOR = (128, 128, 128)
 
 #Pick one of the following:
-#from graphical_display import Display  #Requires pygame
-#from tkinter_display import Display #Requires tkinter
+#from pygame_display import Display  #Requires pygame
+#from tkinter_display import Display #tkinter comes installed with most versions of python
 #from text_display import Display
 from no_display import Display
 
@@ -53,10 +53,10 @@ SPECIMEN_LIFESPAN = 100
 REPRODUCTION_RATE = 10
 NUM_PARENTS = 2
 
-DNA_LENGTH = 100
-DNA_MAX_VALUE = (1 << DNA_LENGTH) - 1
-DNA_CROSSOVER_RATE = .05
-DNA_MUTATION_RATE = .01
+GENOME_LENGTH = 100
+GENOME_MAX_VALUE = (1 << GENOME_LENGTH) - 1
+GENOME_CROSSOVER_RATE = .05
+GENOME_MUTATION_RATE = .01
 
 VISION_WIDTH = 5
 VISION_DISTANCE = int(VISION_WIDTH/2)
