@@ -877,25 +877,34 @@ namespace ppcggacscontroller
 			{
 				if (specimens.Count >= 2)
 				{
-					int n = consts.reproductionRate;
+					Specimen[][] breeders = grabDistinctGrouped(consts.reproductionRate, 2);
 					
-					for (int i = 0; i < n; i++)
-					{
-						Specimen[] breeders = grabDistinct(2);
-						addSpecimen(breeders[0].cross(consts, rnd, breeders[1]));
-					}
+					foreach (Specimen[] breedingPair in breeders)
+						addSpecimen(breedingPair[0].cross(consts, rnd, breedingPair[1]));
 				}
 			}
 			
-			private Specimen[] grabDistinct(int count)
+			private Specimen[][] grabDistinctGrouped(int groups, int groupSize)
+			{
+				long maxRnd = specimens.Sum(s => s.fitness);
+				
+				Specimen[][] res = new GameLogic.Specimen[groups][];
+				
+				for (int i = 0; i < groups; i++)
+				{
+					res[i] = grabDistinctIndividuals(groupSize, maxRnd);
+				}
+				
+				return res;
+			}
+			
+			private Specimen[] grabDistinctIndividuals(int count, long maxRnd)
 			{
 				if (specimens.Count < count)
 					return null;
 				
 				Specimen[] res = new Specimen[count];
-				
-				long maxRnd = specimens.Sum(s => s.fitness); // want to factor this out if we can
-				
+								
 				while (count > 0)
 				{
 					long idx = rndLong(rnd, maxRnd);
