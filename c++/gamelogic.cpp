@@ -78,29 +78,31 @@ class board_t {
     
     std::mt19937_64 rndeng;
     
-    void breed() {
-        if(bots.size() < 2) return;
+    void breed(int n) {
+        int bs = bots.size();
+        if(bs < 2) return;
         ull sum = 0;
-        for(int i = 0; i < bots.size(); i++) {
+        for(int i = 0; i < bs; i++) {
             sum += bots[i].fitness();
         }
-        dna_t parents[2], child;
-        long long r = randlong(sum);
-        int i = 0;
-        while( (r -= bots[i].fitness()) >= 0) i++;
-        parents[0] = bots[i].dna;
-        sum -= bots[i].fitness();
-        r = randlong(sum);
-        int i2 = 0;
-        while( (r -= bots[i2].fitness() * (i != i2)) >= 0) i++;
-        parents[1] = bots[i2].dna;
-        
-        int par = randint(2);
-        for(int j = 0; j < DNA_BITS; j++) {
-            child[j] = parents[par][j] ^ (randdouble() < PROB_MUTATION);
-            par ^= randdouble() < PROB_CROSSOVER;
+        while(n--) {
+            dna_t parents[2], child;
+            long long r = randlong(sum);
+            int i = 0;
+            while( (r -= bots[i].fitness()) >= 0) i++;
+            parents[0] = bots[i].dna;
+            r = randlong(sum - bots[i].fitness());
+            int i2 = 0;
+            while( (r -= bots[i2].fitness() * (i != i2)) >= 0) i++;
+            parents[1] = bots[i2].dna;
+            
+            int par = randint(2);
+            for(int j = 0; j < DNA_BITS; j++) {
+                child[j] = parents[par][j] ^ (randdouble() < PROB_MUTATION);
+                par ^= randdouble() < PROB_CROSSOVER;
+            }
+            bots.push_back({child, randomspawnloc()});
         }
-        bots.push_back({child, randomspawnloc()});
     }
     
     coord_t randomspawnloc() {
@@ -241,6 +243,7 @@ public:
         for(int i = N_INITIAL_BOTS; i--; ) {
             dna_t dna;
             for(int j = 0; j < DNA_BITS; j++) dna[j] = randint(2);
+slog<<dna<<'\n';
             bots.emplace_back(bot_t{dna, randomspawnloc()});
        }
     }
@@ -288,9 +291,7 @@ public:
         }
         if(++spawntimer == SPAWN_PERIOD) {
             spawntimer = 0;
-            for(int n = SPAWN_AMOUNT; n--; ) {
-                breed();
-            }
+            breed(SPAWN_AMOUNT);
         }
     }
     
@@ -300,6 +301,15 @@ public:
     
     int n_alive() {
         return bots.size();
+    }
+    
+    int maxfitness() {
+        int m = -1;
+        for(int i = 0; i < bots.size(); i++) {
+            int f = bots[i].fitness();
+            if(f > m) m = f;
+        }
+        return m;
     }
     
     int randint(int n) {
@@ -366,12 +376,15 @@ color_t view_t::operator() (int x, int y) {
     return board.colorgrid[X][Y];
 }
 
+
 int rungame(player_t player) {
-    board_t b(player/*, 1421320494465294900LL*/);
+    board_t b(player);
     for(int i = 0; i < GAME_DURATION; i++) {
         if(i % N_TURNS_PRINTINFO == 0) {
-            slog << "Turns:" << i << " Specimens: " << b.n_alive() 
-                << " Score: " << b.score() << '\n';
+            slog << "Turns:" << i 
+                 << " Specimens: " << b.n_alive() 
+                 << " Max fitness: " << b.maxfitness()
+                 << " Score: " << b.score() << '\n';
 b.printx();
         }
         b.runframe();
