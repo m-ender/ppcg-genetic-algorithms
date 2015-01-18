@@ -62,7 +62,7 @@ def take_turn(board, turn_number, player):
                 points += 1
                 new_start_coords = random.choice(board.starting_squares)
                 specimen.birth = turn_number
-                specimen.bonus_fitness += coordinates.UNSAFE_BOARD_WIDTH
+                specimen.bonus_fitness += coordinates.BOARD_WIDTH
                 if new_start_coords in board.next_specimens:
                     board.next_specimens[new_start_coords].append(specimen)
                 else:
