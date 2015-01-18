@@ -1,6 +1,6 @@
 from random import Random
 from coordinates import Coordinate
-from trap import trap_types, Trap
+from trap import trap_types, Trap, TeleportationTrap
 from square import Square
 from sys import version_info
 from constants import BOARD_EXTENDED_WIDTH, UNSAFE_BOARD_WIDTH, BOARD_HEIGHT, OUT_OF_BOUNDS_COLOR
@@ -19,7 +19,15 @@ class Board(object):
         self.all_colors = [color for color in colors]
         self.traps = [Trap(Coordinate(0, 0))]*len(colors)
         for trap_type in trap_types:
-            used_traps = self.random.sample(trap_type.possible_directions,
+            if trap_type is TeleportationTrap:
+                used_traps = []
+                for i in range(trap_type.max_traps):
+                    if i % 2:
+                        used_traps.append(-used_traps[-1])
+                    else:
+                        used_traps.append(self.random.choice(trap_type.possible_directions))
+            else:
+                used_traps = self.random.sample(trap_type.possible_directions,
                                             trap_type.max_traps)
             coloring = zip(used_traps, colors)
             colors = colors[len(used_traps):]
