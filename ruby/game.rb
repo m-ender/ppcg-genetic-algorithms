@@ -4,4 +4,4 @@ require_relative 'cell'
 require_relative 'random'
 require_relative 'board'
 
-puts Board.new(RNG)
+board = Board.new(RNG)

@@ -35,11 +35,17 @@ class Vector2D
         return @x < 0 || @y < 0 || @y >= BOARD_HEIGHT
     end
 
-    def at_finish
+    def at_goal
         return !out_of_bounds && @x >= UNSAFE_BOARD_WIDTH
     end
 
     def to_s
         "(% d,% d)" % [@x, @y]
     end
+
+    def hash
+        @x*2*BOARD_HEIGHT + @y
+    end
+
+    alias eql? ==
 end

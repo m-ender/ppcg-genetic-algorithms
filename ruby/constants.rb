@@ -44,7 +44,7 @@ VISION = []
 MOVES = []
 (-1..1).each{|x|
     (-1..1).each{|y|
-        VISION.push(Vector2D.new(x,y))
+        MOVES.push(Vector2D.new(x,y))
     }
 }
 
