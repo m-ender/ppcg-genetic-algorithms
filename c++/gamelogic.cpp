@@ -202,20 +202,22 @@ printgrid(0);printgrid(1);printgrid(2);
             std::vector<coord_t> q;
             seen[1][y0] = true;
             q.push_back({1, y0});
-            while(!q.empty()) {
-                coord_t s = q.back();
-                q.pop_back();
-                for(int x = -1; x <= 1; x++)
-                    for(int y = -1; y <= 1; y++) {
-                        if((x || y) && colortypes[colorgrid[s.x+x][s.y+y]] == C_WALL)
-                            continue;
-                        coord_t next = destgrid[s.x + x][s.y + y];
-                        if(next.x == DEST_GOAL.x) goto win;
-                        if(next.x > 0 && !seen[next.x][next.y]) {
-                            seen[next.x][next.y] = true;
-                            q.push_back(next);
+            int i = 0;
+            for(int i = 0, t = MAX_LIFE; t--; ) {
+                for(int j = q.size(); i < j; i++) {
+                    coord_t s = q[i];
+                    for(int x = -1; x <= 1; x++)
+                        for(int y = -1; y <= 1; y++) {
+                            if((x || y) && colortypes[colorgrid[s.x+x][s.y+y]] == C_WALL)
+                                continue;
+                            coord_t next = destgrid[s.x + x][s.y + y];
+                            if(next.x == DEST_GOAL.x) goto win;
+                            if(next.x > 0 && !seen[next.x][next.y]) {
+                                seen[next.x][next.y] = true;
+                                q.push_back(next);
+                            }
                         }
-                    }
+                }
             }
             continue;
           win:
@@ -278,6 +280,7 @@ public:
                 if(++bots[i].lifetime == MAX_LIFE) {
                     bots[i] = bots.back();
                     bots.pop_back();
+                    i--;
                 } else {
                     bots[i].position = dest;
                 }
@@ -378,11 +381,17 @@ b.printx();
 
 double runsimulation(player_t player) {
     int sum = 0;
+    int scores[N_GAMES];
     for(int i = 0; i < N_GAMES; i++) {
         int sc = rungame(player);
         slog << "Scored " << sc << " in game " << i << '\n';
         sum += sc;
+        scores[i] = sc;
     }
+    slog << "Scores:";
+    for(int i = 0; i < N_GAMES; i++)
+        slog << ' ' << scores[i];
+    slog<<'\n';
     return sum / (double)N_GAMES;
 }
 

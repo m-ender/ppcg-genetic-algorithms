@@ -69,6 +69,29 @@ coord_t fearplayer(dna_t d, view_t v) {
     return cmin;
 }
 
+int dnarange(dna_t &d, int start, int len) {
+    int res = 0;
+    for(int i = start; i < start+len; i++) {
+        res = (res << 1) | d[i];
+    }
+    return res;
+}
+
+coord_t colorScorePlayer(dna_t d, view_t v) {
+    const int chunklen = DNA_BITS / N_COLORS;
+    int ymax[3], nmax, smax = -1;
+    for(int y = -1; y <= 1; y++) {
+        if(v(1, y) == OUT_OF_BOUNDS) continue;
+        int score = dnarange(d, v(1, y)*chunklen, chunklen);
+        if(score > smax) {
+            smax = score;
+            nmax = 0;
+        }
+        if(score == smax) ymax[nmax++] = y;
+    }
+    return {1, ymax[rand() % nmax]};
+}
+
 int main() {
-    slog << "Average score: " << runsimulation(lcplayer2);
+    slog << "Average score: " << runsimulation(colorScorePlayer);
 }
