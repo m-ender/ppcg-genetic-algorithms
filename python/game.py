@@ -62,7 +62,7 @@ def take_turn(board, turn_number, player):
                 points += 1
                 new_start_coords = random.choice(board.starting_squares)
                 specimen.birth = turn_number
-                specimen.bonus_fitness += coordinates.UNSAFE_BOARD_WIDTH
+                specimen.bonus_fitness += BOARD_WIDTH
                 if new_start_coords in board.next_specimens:
                     board.next_specimens[new_start_coords].append(specimen)
                 else:
@@ -76,13 +76,14 @@ def take_turn(board, turn_number, player):
                       for offset in line] for line in VISION]
             #move specimen
             direction = player.take_turn(specimen.genome, vision)
+            assert direction in coordinates.directions
             new_location = coordinate+direction
             new_square = board.get_square(new_location)
             if new_square.wall:
                 new_square = board.get_square(coordinate)
                 new_location = coordinate
             teleported = new_square.teleport+new_location
-            if board.get_square(teleported).killer and not coordinate.at_finish():
+            if board.get_square(teleported).killer:
                 continue
             if teleported in board.next_specimens:
                 board.next_specimens[teleported].append(specimen)
@@ -132,7 +133,7 @@ def breed(board, current_turn, number_of_offspring):
                     continue
                 break
         parent_groups.append(selected_specimens)
-
+        
     for i in xrange(number_of_offspring):
         selected_specimens = parent_groups[i]
         current_parent = random.choice(selected_specimens)
@@ -161,7 +162,6 @@ def check_for_life(board):
     population = 0
     for c, specimens in board.specimens.items():
         population += len(specimens)
-        print('POP:', population)
         if population >= NUM_PARENTS:
             return True
 
