@@ -82,7 +82,7 @@ def take_turn(board, turn_number, player):
                 new_square = board.get_square(coordinate)
                 new_location = coordinate
             teleported = new_square.teleport+new_location
-            if board.get_square(teleported).killer and not coordinate.at_finish():
+            if board.get_square(teleported).killer:
                 continue
             if teleported in board.next_specimens:
                 board.next_specimens[teleported].append(specimen)
@@ -132,7 +132,7 @@ def breed(board, current_turn, number_of_offspring):
                     continue
                 break
         parent_groups.append(selected_specimens)
-
+        
     for i in xrange(number_of_offspring):
         selected_specimens = parent_groups[i]
         current_parent = random.choice(selected_specimens)
