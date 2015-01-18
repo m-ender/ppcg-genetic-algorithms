@@ -132,7 +132,7 @@ def breed(board, current_turn, number_of_offspring):
                     continue
                 break
         parent_groups.append(selected_specimens)
-        
+
     for i in xrange(number_of_offspring):
         selected_specimens = parent_groups[i]
         current_parent = random.choice(selected_specimens)

@@ -7,7 +7,7 @@ class Board
 
     def initialize(rng)
         # Hash from coordinate to list of specimens
-        @specimens = Hash.new { |hash, key| hash[key] = [] }
+        @specimens = {}
 
         # Create a cell prototype for out of bounds cells.
         # These are empty but lethal.
@@ -80,9 +80,8 @@ class Board
 
             # Validate
             determine_starting_cells
-            p @starting_cells.length
-            #break if @starting_cells.length >= 10
-            "Bad board, retrying..."
+            break if @starting_cells.length >= 10
+            puts "Bad board, retrying..."
         end
     end
 
@@ -125,12 +124,31 @@ class Board
                 end
 
                 if safe
-                    @starting_cells.push coord
+                    @starting_cells.push Vector2D.new(0, y)
                     break
                 end
 
                 checked[coord] = true
             end
         end
+    end
+
+    def add_specimen(specimen)
+        coord = @starting_cells.sample
+        if @specimens[coord]
+            @specimens[coord].push specimen
+        else
+            @specimens[coord] = [specimen]
+        end
+    end
+
+    def population
+        total = 0
+        @specimens.each { |c,l| total += l.size }
+        return total
+    end
+
+    def get_vision(vec2d)
+        VISION.map{|c| get(vec2d+c).color}.each_slice(5).to_a
     end
 end
