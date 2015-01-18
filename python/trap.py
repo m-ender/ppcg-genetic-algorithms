@@ -45,7 +45,7 @@ class TeleportationTrap(Trap):
         return True
 
 class WallTrap(Trap):
-    possible_directions = coordinates.directions
+    possible_directions = [coordinates.Coordinate(0,0)]
     max_traps = NUMBER_OF_WALL_TYPES
 
     def is_wall(self):
