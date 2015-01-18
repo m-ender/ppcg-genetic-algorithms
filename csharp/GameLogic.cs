@@ -444,28 +444,46 @@ namespace ppcggacscontroller
 				// create colorTable
 				var colorCounts = new []
 				{
-					new { type = ColorType.Safe, count = consts.safeColCount, toxb = 0, toyb = 0 },
-					new { type = ColorType.Tele, count = consts.teleColCount, toxb = consts.teleDist, toyb = consts.teleDist },
-					new { type = ColorType.Trap, count = consts.trapColCount, toxb = consts.trapDist, toyb = consts.trapDist },
-					new { type = ColorType.Wall, count = consts.wallColCount, toxb = 0, toyb = 0 }
+					new { type = ColorType.Safe, count = consts.safeColCount, manual = false, toxb = 0, toyb = 0 },
+					new { type = ColorType.Tele, count = consts.teleColCount, manual = true,  toxb = consts.teleDist, toyb = consts.teleDist }, // we do these separately
+					new { type = ColorType.Trap, count = consts.trapColCount, manual = false, toxb = consts.trapDist, toyb = consts.trapDist },
+					new { type = ColorType.Wall, count = consts.wallColCount, manual = false, toxb = 0, toyb = 0 }
 				};
 				
 				colorTable = new Color[colorCounts.Sum(cc => cc.count)];
 				
-				Action<Color> assignColor = (c) =>
+				Func<int> nextColorId = () =>
 				{
 					int k;
-					while (colorTable[k = rnd.Next(0, colorTable.Length)] != null); // best pracice
-					colorTable[k] = c;
+					while (colorTable[k = rnd.Next(0, colorTable.Length)] != null); // best practise
+					return k;
 				};
 				
-				int ci = 0;
+				// add tele colors
+				for (int i = 0; i < consts.teleColCount; i += 2)
+				{
+					int ox = rnd.Next(-consts.teleDist, consts.teleDist + 1); // no, we can't just take a positive, that would bias towards 0
+					int oy = rnd.Next(-consts.teleDist, consts.teleDist + 1);
+					
+					Color c;
+					
+					c = new Color(nextColorId(), ColorType.Tele, ox, oy);
+					colorTable[c.n] = c;
+					
+					c = new Color(nextColorId(), ColorType.Tele, -ox, -oy);
+					colorTable[c.n] = c;
+				}
+				
+				// add less picky colors
 				foreach (var cc in colorCounts)
 				{
+					if (cc.manual)
+						continue;
+					
 					for (int i = 0; i < cc.count; i++)
 					{
-						Color c = new Color(ci++, cc.type, rnd.Next(-cc.toxb, cc.toxb+1), rnd.Next(-cc.toyb, cc.toyb+1));
-						assignColor(c);
+						Color c = new Color(nextColorId(), cc.type, rnd.Next(-cc.toxb, cc.toxb+1), rnd.Next(-cc.toyb, cc.toyb+1));
+						colorTable[c.n] = c;
 					}
 				}
 				
@@ -725,8 +743,6 @@ namespace ppcggacscontroller
 			// returns the score (mean score)
 			public decimal runSession()
 			{
-				int oldScore = 0;
-				
 				List<int> scores = new List<int>();
 				
 				for (int i = 0; i < consts.repeatCount; i++)
