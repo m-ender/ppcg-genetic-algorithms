@@ -46,6 +46,7 @@ namespace ppcggacscontroller
 			// specimens
 			public int maxAge = 100;
 			public int reproductionRate = 10;
+			public int fitnessScoreCoef = 50;
 			
 			// views
 			public int viewDimX = 2;
@@ -70,8 +71,7 @@ namespace ppcggacscontroller
 		// sue me
 		private class Color
 		{
-			public static Color OutOfBoundsDead = new Color(-1, ColorType.Trap);
-			public static Color OutOfBoundsAlive = new Color(-1, ColorType.Safe);
+			public static Color OutOfBounds = new Color(-1, ColorType.Trap);
 			
 			public int n {get; private set;}
 			public ColorType type {get; private set;}
@@ -255,6 +255,7 @@ namespace ppcggacscontroller
 			public Board.Position pos;
 			public int age;
 			public int score;
+			private int fitnessScoreCoef;
 			
 			public Genome g {get; private set;}
 			
@@ -262,13 +263,14 @@ namespace ppcggacscontroller
 			{
 				get
 				{ // positions are 0-indexed internally
-					return pos.x + 1 + pos.brd.width * score;
+					return pos.x + 1 + fitnessScoreCoef * score;
 				}
 			}
 			
-			public Specimen(Genome gN)
+			public Specimen(Genome gN, GameConstants consts)
 			{
 				g = gN;
+				fitnessScoreCoef = consts.fitnessScoreCoef;
 			}
 			
 			public Genome cross(GameConstants consts, Random rnd, Specimen other)
@@ -676,10 +678,8 @@ namespace ppcggacscontroller
 			
 			public Color getColor(int x, int y)
 			{
-				if (x < 0 || y < 0 || y >= height)
-					return Color.OutOfBoundsDead;
-				else if (x >= width)
-					return Color.OutOfBoundsAlive;
+				if (x < 0 || y < 0 || y >= height || x >= width)
+					return Color.OutOfBounds;
 				else
 					return grid[x, y].trueColor;
 			}
@@ -729,7 +729,7 @@ namespace ppcggacscontroller
 			
 			private void addSpecimen(Genome g)
 			{
-				Specimen s = new Specimen(g);
+				Specimen s = new Specimen(g, consts);
 				resetSpecimen(s);
 				specimens.Add(s);
 			}
