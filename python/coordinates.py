@@ -11,6 +11,9 @@ class Coordinate():
 
     def __sub__(self, other):
         return Coordinate(self.x-other.x, self.y-other.y)
+        
+    def __neg__(self):
+        return Coordinate(-self.x, -self.y)
 
     def __hash__(self):
         return self.hash
