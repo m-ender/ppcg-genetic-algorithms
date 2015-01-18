@@ -76,7 +76,7 @@ def take_turn(board, turn_number, player):
                       for offset in line] for line in VISION]
             #move specimen
             direction = player.take_turn(specimen.genome, vision)
-            assert direction in coordinates.directions
+            assert direction in coordinates.directions, 'illegal move ({},{})'.format(direction.x,direction.y)
             new_location = coordinate+direction
             new_square = board.get_square(new_location)
             if new_square.wall:

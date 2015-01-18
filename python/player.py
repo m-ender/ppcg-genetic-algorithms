@@ -100,4 +100,16 @@ class LemmingPlayer(Player):
         return random.choice(self.coords)
 
 
+class IllegalPlayer(Player):
+    def __init__(self):
+        Player.__init__(self)
+        self.coords = [Coordinate(2,-1),
+                       Coordinate(2, 0),
+                       Coordinate(2, 1)
+                       ]
+                   
+    def turn(self):
+        return random.choice(self.coords)
+        
+        
 PLAYER_TYPE = ColorScorePlayer
