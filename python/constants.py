@@ -36,8 +36,8 @@ TELEPORT_COLOR = (128, 128, 255)
 WALL_COLOR = (128, 128, 128)
 
 #Pick one of the following:
-#from graphical_display import Display  #Requires pygame
-#from tkinter_display import Display #Requires tkinter
+#from pygame_display import Display  #Requires pygame
+#from tkinter_display import Display #tkinter comes installed with most versions of python
 #from text_display import Display
 from no_display import Display
 
