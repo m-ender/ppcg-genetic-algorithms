@@ -50,8 +50,58 @@ def take_turn(board, turn, player)
     return points
 end
 
-def breed(board, turn)
+def score_specimen(coord, specimen)
+    coord.x + specimen.bonus_fitness + 1
+end
 
+def breed(board, turn)
+    $TotalFitness = 0
+    $MaxFitness = 0
+    board.specimens.each do |coord, specimens|
+        specimens.each do |specimen|
+            fitness = score_specimen(coord, specimen)
+            $TotalFitness += fitness
+            $MaxFitness = fitness if fitness > $MaxFitness
+        end
+    end
+    $AllTimeMaxFitness = $MaxFitness if $MaxFitness > $AllTimeMaxFitness
+    parent_groups = []
+    REPRODUCTION_RATE.times do
+        selected_parents = []
+        remaining_total = $TotalFitness
+        NUMBER_OF_PARENTS.times do
+            count_down = RNG.rand(remaining_total)
+            selected = false
+            board.specimens.each do |coord, specimens|
+                specimens.each do |specimen|
+                    next if selected_parents.include? specimen
+                    fitness = score_specimen(coord, specimen)
+                    count_down -= fitness
+                    if count_down < 0
+                        selected_parents.push specimen
+                        remaining_total -= fitness
+                        selected = true
+                        break
+                    end
+                end
+                break if selected
+            end
+        end
+        parent_groups.push selected_parents
+    end
+
+    parent_groups.each do |parents|
+        parent = parents.sample
+        new_genome = 0
+        (GENOME_LENGTH-1).downto(0).each do |position|
+            parent = parents.sample if RNG.rand < GENOME_CROSSOVER_RATE
+            bit = parent.bit_at(position)
+            b = 1-bit if RNG.rand < GENOME_MUTATION_RATE
+            new_genome = (new_genome << 1) + bit
+        end
+        raise "Genome too long: #{new_genome}" if new_genome > GENOME_MAX_VALUE
+        board.add_specimen(Specimen.new(new_genome, turn))
+    end
 end
 
 player = PLAYER.new
@@ -66,6 +116,7 @@ NUMBER_OF_BOARDS.times do |board_number|
         board.add_specimen(Specimen.new(RNG.rand(GENOME_MAX_VALUE)))
     end
 
+    $TotalFitness = $MaxFitness = $AllTimeMaxFitness = 0
     total_points = 0
 
     start = Time.now
@@ -80,11 +131,14 @@ NUMBER_OF_BOARDS.times do |board_number|
         breed(board, turn)
 
         if turn % (NUMBER_OF_TURNS/100) == 0
-            puts "%2d%% %4.3fs %10d pts Pop %5d" % [
+            puts "%2d%% %4.1fs %10d pts Pop %5d Fit Avg %7.3f Max %5d AllTimeMax %5d" % [
                 turn*100/NUMBER_OF_TURNS,
                 Time.now - start,
                 total_points,
-                population
+                population,
+                $TotalFitness/population.to_f,
+                $MaxFitness,
+                $AllTimeMaxFitness
             ]
         end
     end

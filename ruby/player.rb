@@ -12,7 +12,7 @@ class Player
     end
 
     def bit_at(i)
-        (@genome >> position) & 1
+        (@genome >> i) & 1
     end
 
     def bit_range(start, stop)

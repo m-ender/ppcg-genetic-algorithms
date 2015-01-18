@@ -8,6 +8,6 @@ class Specimen
     end
 
     def bit_at(i)
-        (@genome >> position) & 1
+        (@genome >> i) & 1
     end
 end
