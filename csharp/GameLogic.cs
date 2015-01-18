@@ -10,22 +10,25 @@ using System.Collections.Generic;
 using System.Linq;
 
 // sorry about the naming, never written code for someone else to use before
-// TODO: find OBOEs
 
 namespace ppcggacscontroller
 {
 	public class GameLogic
 	{
 		public class GameConstants
-		{	
+		{
 			// board
-			public int boardWidth = 50;
+			public int boardWidth = 53;
+			public int goalX = 49;
 			public int boardHeight = 15;
 		
-			public int safeColCount = 10;
-			public int trapColCount = 1;
-			public int teleColCount = 1;
-			public int wallColCount = 1;
+			public int safeColCount = 8;
+			public int trapColCount = 2;
+			public int teleColCount = 4;
+			public int wallColCount = 2;
+			
+			public int teleDist = 4;
+			public int trapDist = 1;
 			
 			// game
 			public int turnCount = 10000;
@@ -35,9 +38,9 @@ namespace ppcggacscontroller
 			public int turnsPerBreeding = 1;
 			
 			// genome
-			public int genomeSize = 50;
+			public int genomeSize = 100;
 			
-			public double genomeSwapRate = 0.01;
+			public double genomeSwapRate = 0.05;
 			public double genomeMutateRate = 0.01;
 			
 			// specimens
@@ -417,6 +420,7 @@ namespace ppcggacscontroller
 			
 			private Cell[,] grid; // tidy rather than fast
 			private Color[] colorTable; // Color.n -> ColourType
+			private int[] startCellYs;
 			
 			private Random rnd;
 			
@@ -441,8 +445,8 @@ namespace ppcggacscontroller
 				var colorCounts = new []
 				{
 					new { type = ColorType.Safe, count = consts.safeColCount, toxb = 0, toyb = 0 },
-					new { type = ColorType.Tele, count = consts.teleColCount, toxb = 2, toyb = 2 },
-					new { type = ColorType.Trap, count = consts.trapColCount, toxb = 1, toyb = 1 },
+					new { type = ColorType.Tele, count = consts.teleColCount, toxb = consts.teleDist, toyb = consts.teleDist },
+					new { type = ColorType.Trap, count = consts.trapColCount, toxb = consts.trapDist, toyb = consts.trapDist },
 					new { type = ColorType.Wall, count = consts.wallColCount, toxb = 0, toyb = 0 }
 				};
 				
@@ -473,6 +477,13 @@ namespace ppcggacscontroller
 				{
 					for (int j = 0; j < height; j++)
 					{
+						Color rndc = rndColor();
+						
+						while (i >= consts.goalX && rndc.type != ColorType.Safe)
+						{ // goal column must be safe
+							rndc = rndColor();
+						}
+						
 						grid[i, j] = new Cell(new Position(this, i, j), rndColor());
 					}
 				}
@@ -490,7 +501,7 @@ namespace ppcggacscontroller
 						ty += c.toy;
 					}
 					
-					if (indicesInBounds(tx, ty))
+					if (boundsCheck(tx, ty) == SpecimenState.Alive) // only apply to non-goal cells on the track
 					{
 						grid[tx, ty].apply(c);
 					}
@@ -501,7 +512,33 @@ namespace ppcggacscontroller
 					goto again;
 			}
 			
+			
 			private bool verify()
+			{
+				int inadmissibleCount = 0;
+				
+				List<int> startCellYlist = new List<int>();
+				
+				for (int j = 0; j < height; j++)
+				{
+					if (admissibleStartingCellCheck(new Position(this, 0, j)))
+					{
+						startCellYlist.Add(j);
+					}
+					else
+					{
+						inadmissibleCount++;
+						if (inadmissibleCount >= 10)
+							return false;
+					}
+				}
+				
+				startCellYs = startCellYlist.ToArray();
+				
+				return true;
+			}
+			
+			private bool admissibleStartingCellCheck(Position sp)
 			{
 				int maxTurns = consts.maxAge;
 				
@@ -509,12 +546,9 @@ namespace ppcggacscontroller
 				List<Position> due = new List<Position>();
 				List<Position> cur = new List<Position>();
 				
-				int turnCount = 0;
+				cur.Add(sp);
 				
-				for (int j = 0; j < height; j++)
-				{
-					cur.Add(new Position(this, 0, j));
-				}
+				int turnCount = 0;
 				
 				while (cur.Count > 0 && turnCount < maxTurns)
 				{
@@ -556,6 +590,20 @@ namespace ppcggacscontroller
 				return false;
 			}
 			
+			public Position rndStartCell()
+			{
+				int y = startCellYs[rnd.Next(startCellYs.Length)];
+				return new Position(this, 0, y);
+			}
+			
+			public int numStartCells
+			{
+				get
+				{
+					return startCellYs.Length;
+				}
+			}
+			
 			// evaluate a move onto this position
 			public SpecimenState move(Position ipos, int ox, int oy, out Position rpos)
 			{
@@ -569,25 +617,18 @@ namespace ppcggacscontroller
 				
 				rpos = new Position(this, x, y);
 				
-				if (boundsCheck(rpos.x, rpos.y) == SpecimenState.Dead)
+				SpecimenState premss = boundsCheck(rpos.x, rpos.y);
+				if (premss == SpecimenState.Dead)
 					return SpecimenState.Dead;
-				
-				if (rpos.x >= width)
-					return SpecimenState.Win;
 				
 				rpos = grid[rpos.x, rpos.y].moveFrom(ipos);
 				
-				if (boundsCheck(rpos.x, rpos.y) == SpecimenState.Dead)
-					return SpecimenState.Dead;
-				
-				if (rpos.x >= width)
-					return SpecimenState.Win;
+				SpecimenState postmss = boundsCheck(rpos.x, rpos.y);
+				if (postmss != SpecimenState.Alive)
+					return postmss;
 				
 				if (grid[rpos.x, rpos.y].moveTo(rpos) == SpecimenState.Dead)
 					return SpecimenState.Dead;
-				
-				if (rpos.x >= width - 1)
-					return SpecimenState.Win;
 				
 				return SpecimenState.Alive;
 			}
@@ -603,6 +644,9 @@ namespace ppcggacscontroller
 			{
 				if (x < 0 || y < 0 || y >= height)
 					return SpecimenState.Dead;
+				
+				if (x >= consts.goalX)
+					return SpecimenState.Win;
 				
 				return SpecimenState.Alive;
 			}
@@ -661,8 +705,6 @@ namespace ppcggacscontroller
 			
 			public Game(PlayerDel pd)
 			{
-				b = new Board(consts, rnd);
-				
 				plyr = new Player(pd);
 				specimens = new List<Specimen>();
 			}
@@ -676,7 +718,7 @@ namespace ppcggacscontroller
 			
 			private void resetSpecimen(Specimen s)
 			{
-				s.pos = new Board.Position(b, 0, rnd.Next(b.height));
+				s.pos = b.rndStartCell();
 				s.age = 0;
 			}
 			
@@ -690,21 +732,19 @@ namespace ppcggacscontroller
 				for (int i = 0; i < consts.repeatCount; i++)
 				{
 					Console.WriteLine("Running game {0}", i);
-					b.printIsh(Console.Out);
+					
 					runGame();
 					
-					int thisScore = plyr.score - oldScore;
-					scores.Add(thisScore);
-					oldScore = plyr.score;
+					scores.Add(plyr.score);
 					
-					Console.WriteLine("Score: {0}", thisScore);
+					Console.WriteLine("Score: {0}", plyr.score);
 					Console.WriteLine();
 				}
 				
 				Console.WriteLine("Scores: " + string.Join(", ", scores));
 				
 				decimal mean = (decimal)plyr.score / (decimal)consts.repeatCount;
-				Console.WriteLine("Average score is " + mean);
+				Console.WriteLine("Average score is " + scores.Average());
 				
 				return mean;
 			}
@@ -714,29 +754,86 @@ namespace ppcggacscontroller
 				// init
 				b = new Board(consts, rnd);
 				
+				Console.WriteLine(b.numStartCells + " start cells");
+				
+				plyr.score = 0;
 				specimens.Clear();
+				
 				for (int i = 0; i < consts.initialSpecimenCount; i++)
 				{
 					addSpecimen(new Genome(consts, rnd));
 				}
 				
 				// run
+				System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+				sw.Reset();
+				sw.Start();
+				
 				int turn = 0;
 				int breedTicker = consts.turnsPerBreeding;
+				long spc = 0;
 				
-				while (turn++ < consts.turnCount)
+				long bestFitness = 0;
+				
+				Action printDiags = () =>
 				{
+					Console.WriteLine(
+						(100 * turn / consts.turnCount) + "%"
+						+ "\t" +
+						((decimal)sw.ElapsedMilliseconds / 1000M).ToString("0.0") + "s"
+						+ "\t" +
+						plyr.score
+						+ "\t" +
+						specimens.Count
+						+ "\t" +
+						specimens.Average(s => s.fitness).ToString("0.00")
+						+ "\t" +
+						specimens.Max(s => s.fitness)
+						+ "\t" +
+						bestFitness
+					); 
+				};
+				
+				int diagInterval = 200;
+				int diagTicker = diagInterval;
+				
+				while (turn < consts.turnCount)
+				{
+					turn++;
+					
+					if (specimens.Count < 2)
+						break; // end game
+					
+					spc += specimens.Count;
+					
 					move();
 					
+					// update bestFitness
+					long tbf = specimens.Max(s => s.fitness);
+					if (tbf > bestFitness)
+						bestFitness = tbf;
+					
+					if (--diagTicker == 0)
+					{
+						printDiags();
+						diagTicker = diagInterval;
+					}
+					
+					// breed
 					if (--breedTicker == 0)
 					{
 						breed();
 						breedTicker = consts.turnsPerBreeding;
 					}
 				}
+				
+				sw.Stop();
+				Console.WriteLine();
+				printDiags();
+				Console.WriteLine(turn + " last turn");
+				Console.WriteLine(spc + " specimen turns");
+				Console.WriteLine(((decimal)spc / (decimal)sw.ElapsedMilliseconds * 1000M) + " specimen turns per second");
 			}
-			
-			static int bestX = 0;
 			
 			private void move()
 			{
@@ -745,6 +842,14 @@ namespace ppcggacscontroller
 				for (int i = specimens.Count - 1; i >= 0; i--)
 				{
 					Specimen s = specimens[i];
+					
+					if (s.age == consts.maxAge)
+					{
+						specimens.RemoveAt(i);
+						continue;
+					}
+					
+					s.age++;
 					
 					int ox, oy;
 					
@@ -755,19 +860,13 @@ namespace ppcggacscontroller
 					SpecimenState sstate = s.pos.move(ox, oy, out npos);
 					s.pos = npos;
 					
-					if (s.pos.x > bestX)
-					{
-						bestX = s.pos.x;
-						Console.WriteLine(bestX);
-					}
-					
 					if (sstate == SpecimenState.Win)
 					{
 						s.score++;
 						plyr.score++;
 						resetSpecimen(s);
 					}
-					else if (sstate == SpecimenState.Dead || ++s.age > consts.maxAge)
+					else if (sstate == SpecimenState.Dead)
 					{
 						specimens.RemoveAt(i);
 					}

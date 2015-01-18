@@ -25,7 +25,7 @@ namespace ppcggacscontroller
 		public static void Main(string[] args)
 		{
 			// create a game instance, passing it your GameLogic.PlayerDel
-			GameLogic.Game g = new GameLogic.Game(fgrr);
+			GameLogic.Game g = new GameLogic.Game(LinearCombinationPlayer);
 			// run it
 			g.runSession();
 			
