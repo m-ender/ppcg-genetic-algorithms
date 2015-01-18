@@ -1,8 +1,8 @@
 class Specimen(object):
-    def __init__(self, dna, turn):
-        self.dna = dna
+    def __init__(self, genome, turn):
+        self.genome = genome
         self.birth = turn
         self.bonus_fitness = 0
 
     def bit_at(self, position):
-        return (self.dna >> position) & 1
+        return (self.genome >> position) & 1
