@@ -27,8 +27,7 @@ class Board(object):
                     else:
                         used_traps.append(self.random.choice(trap_type.possible_directions))
             else:
-                used_traps = self.random.sample(trap_type.possible_directions,
-                                            trap_type.max_traps)
+                used_traps = [self.random.choice(trap_type.possible_directions) for i in range(trap_type.max_traps)]
             coloring = zip(used_traps, colors)
             colors = colors[len(used_traps):]
             for direction, color in coloring:
