@@ -16,11 +16,11 @@ class Player
     end
 
     def bit_range(start, stop)
-        (@dna >> start) & ((1 << (stop-start)) - 1)
+        (@genome >> start) & ((1 << (stop-start)) - 1)
     end
 
     def bit_chunk(start, length)
-        (@dna >> start) & ((1 << length) - 1)
+        (@genome >> start) & ((1 << length) - 1)
     end
 
     def vision_at(x, y)
@@ -34,4 +34,43 @@ class RandomPlayer < Player
     end
 end
 
-PLAYER = RandomPlayer
+class LemmingPlayer < Player
+    def initialize
+        @coords = [Vector2D.new(-1,-1),
+                   Vector2D.new(-1, 0),
+                   Vector2D.new(-1, 1),
+                   Vector2D.new( 1, 0)]
+    end
+
+    def turn
+        @coords.sample
+    end
+end
+
+class ColorScorePlayer < Player
+    def initialize
+        @coords = [Vector2D.new( 1,-1),
+                   Vector2D.new( 1, 0),
+                   Vector2D.new( 1, 1)]
+    end
+
+    def vision_at(vec2d)
+        @vision[vec2d.x+2][vec2d.y+2]
+    end
+
+    def turn
+        max_score = @coords.map { |c|
+            color = vision_at(c)
+            color < 0 ? -1 : bit_chunk(6*color, 6)
+        }.max
+
+        restricted_coords = @coords.select { |c|
+            color = vision_at(c)
+            color >= 0 && bit_chunk(6*color, 6) == max_score
+        }
+
+        restricted_coords.sample
+    end
+end
+
+PLAYER = ColorScorePlayer
