@@ -1,12 +1,4 @@
-﻿/*
- * Created by SharpDevelop.
- * User: Freddie
- * Date: 19/01/2015
- * Time: 17:20
- * 
- * To change this template use Tools | Options | Coding | Edit Standard Headers.
- */
-namespace ppcggacscontroller
+﻿namespace ppcggacscontroller
 {
 	partial class Display
 	{
@@ -50,7 +42,7 @@ namespace ppcggacscontroller
 									| System.Windows.Forms.AnchorStyles.Right)));
 			this.viewF.Location = new System.Drawing.Point(0, 82);
 			this.viewF.Name = "viewF";
-			this.viewF.Size = new System.Drawing.Size(608, 316);
+			this.viewF.Size = new System.Drawing.Size(676, 222);
 			this.viewF.TabIndex = 0;
 			this.viewF.TabStop = false;
 			this.viewF.Paint += new System.Windows.Forms.PaintEventHandler(this.ViewFPaint);
@@ -64,7 +56,7 @@ namespace ppcggacscontroller
 			this.tpfF.Maximum = 200;
 			this.tpfF.Minimum = 1;
 			this.tpfF.Name = "tpfF";
-			this.tpfF.Size = new System.Drawing.Size(583, 42);
+			this.tpfF.Size = new System.Drawing.Size(651, 42);
 			this.tpfF.SmallChange = 5;
 			this.tpfF.TabIndex = 1;
 			this.tpfF.TickFrequency = 5;
@@ -85,7 +77,7 @@ namespace ppcggacscontroller
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.ClientSize = new System.Drawing.Size(607, 398);
+			this.ClientSize = new System.Drawing.Size(675, 304);
 			this.Controls.Add(this.stF);
 			this.Controls.Add(this.viewF);
 			this.Controls.Add(this.tpfF);

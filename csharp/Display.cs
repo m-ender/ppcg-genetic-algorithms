@@ -1,12 +1,4 @@
-﻿/*
- * Created by SharpDevelop.
- * User: Freddie
- * Date: 19/01/2015
- * Time: 17:20
- * 
- * To change this template use Tools | Options | Coding | Edit Standard Headers.
- */
-using System;
+﻿using System;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -33,7 +25,7 @@ namespace ppcggacscontroller
 		private GameLogic.Game g;
 		public bool gone {get; private set;}
 		private int tickCount = 0;
-		private int scale = 10;
+		private int scale = 12;
 		
 		private int ticksPerFrame = 1;
 		private bool showTeleArrows = false;
