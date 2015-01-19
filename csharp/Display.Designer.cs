@@ -38,15 +38,19 @@ namespace ppcggacscontroller
 		{
 			this.viewF = new System.Windows.Forms.PictureBox();
 			this.tpfF = new System.Windows.Forms.TrackBar();
+			this.stF = new System.Windows.Forms.CheckBox();
 			((System.ComponentModel.ISupportInitialize)(this.viewF)).BeginInit();
 			((System.ComponentModel.ISupportInitialize)(this.tpfF)).BeginInit();
 			this.SuspendLayout();
 			// 
 			// viewF
 			// 
-			this.viewF.Location = new System.Drawing.Point(0, 60);
+			this.viewF.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+									| System.Windows.Forms.AnchorStyles.Left) 
+									| System.Windows.Forms.AnchorStyles.Right)));
+			this.viewF.Location = new System.Drawing.Point(0, 82);
 			this.viewF.Name = "viewF";
-			this.viewF.Size = new System.Drawing.Size(822, 338);
+			this.viewF.Size = new System.Drawing.Size(608, 316);
 			this.viewF.TabIndex = 0;
 			this.viewF.TabStop = false;
 			this.viewF.Paint += new System.Windows.Forms.PaintEventHandler(this.ViewFPaint);
@@ -65,15 +69,26 @@ namespace ppcggacscontroller
 			this.tpfF.TabIndex = 1;
 			this.tpfF.TickFrequency = 5;
 			this.tpfF.Value = 1;
-			this.tpfF.ValueChanged += new System.EventHandler(this.TpfFValueChanged);
+			this.tpfF.Scroll += new System.EventHandler(this.TpfFScroll);
+			// 
+			// stF
+			// 
+			this.stF.Location = new System.Drawing.Point(12, 54);
+			this.stF.Name = "stF";
+			this.stF.Size = new System.Drawing.Size(135, 24);
+			this.stF.TabIndex = 2;
+			this.stF.Text = "Show Teleport Arrows";
+			this.stF.UseVisualStyleBackColor = true;
+			this.stF.CheckedChanged += new System.EventHandler(this.StFCheckedChanged);
 			// 
 			// Display
 			// 
 			this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.ClientSize = new System.Drawing.Size(607, 398);
-			this.Controls.Add(this.tpfF);
+			this.Controls.Add(this.stF);
 			this.Controls.Add(this.viewF);
+			this.Controls.Add(this.tpfF);
 			this.Name = "Display";
 			this.Text = "Display";
 			this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.DisplayFormClosing);
@@ -82,6 +97,7 @@ namespace ppcggacscontroller
 			this.ResumeLayout(false);
 			this.PerformLayout();
 		}
+		private System.Windows.Forms.CheckBox stF;
 		private System.Windows.Forms.TrackBar tpfF;
 		private System.Windows.Forms.PictureBox viewF;
 	}

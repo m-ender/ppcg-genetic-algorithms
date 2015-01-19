@@ -15,7 +15,6 @@ namespace ppcggacscontroller
 	public interface IDisplay
 	{
 		void tick();
-		int ticksPerFrame {get; set;}
 	}
 	
 	/// <summary>
@@ -33,22 +32,23 @@ namespace ppcggacscontroller
 		
 		private GameLogic.Game g;
 		public bool gone {get; private set;}
-		public int ticksPerFrame {get; set;}
 		private int tickCount = 0;
 		private int scale = 10;
+		
+		private int ticksPerFrame = 1;
+		private bool showTeleArrows = false;
 		
 		public Display(GameLogic.Game gN)
 		{
 			InitializeComponent();
 			
 			g = gN;
-			ticksPerFrame = 1; // this is a sensible number
 		}
 		
 		void ViewFPaint(object sender, PaintEventArgs e)
 		{
 			e.Graphics.Clear(Color.White);
-			g.draw(e.Graphics, scale);
+			g.draw(e.Graphics, scale, showTeleArrows);
 		}
 		
 		private void invalidateMe()
@@ -81,9 +81,14 @@ namespace ppcggacscontroller
 			gone = true;
 		}
 		
-		void TpfFValueChanged(object sender, EventArgs e)
+		void TpfFScroll(object sender, EventArgs e)
 		{
 			ticksPerFrame = tpfF.Value;
+		}
+		
+		void StFCheckedChanged(object sender, EventArgs e)
+		{
+			showTeleArrows = stF.Checked;
 		}
 	}
 }

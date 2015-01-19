@@ -958,15 +958,20 @@ namespace ppcggacscontroller
 #if! nogdi
 			private Cell[,] bgGrid = null;
 			private int bgScale = -1;
+			private bool bgDrawTeleArrows = false;
 			private System.Drawing.Bitmap bgBmp;
 			
-			private void drawBG(int scale)
+			private void drawBG(int scale, bool drawTeleArrows)
 			{
 				int w = scale * width;
 				int h = scale * height;
 				
 				if (bgBmp != null)
 					bgBmp.Dispose();
+				
+				bgGrid = grid;
+				bgScale = scale;
+				bgDrawTeleArrows = drawTeleArrows;
 				
 				bgBmp = new System.Drawing.Bitmap(w, h);
 				
@@ -999,13 +1004,28 @@ namespace ppcggacscontroller
 						}
 					}
 				}
+				
+				if (drawTeleArrows)
+				{
+					System.Drawing.Pen telePen = new System.Drawing.Pen(System.Drawing.Color.Black, 1);
+					telePen.StartCap = System.Drawing.Drawing2D.LineCap.NoAnchor;
+					telePen.EndCap = System.Drawing.Drawing2D.LineCap.ArrowAnchor;
+					
+					foreach (Cell cl in grid)
+					{
+						if (cl.trueColor.type == ColorType.Tele)
+						{
+							g.DrawLine(telePen, cl.truePos.x * scale + scale / 2, cl.truePos.y * scale + scale / 2, cl.movePos.x * scale + scale / 2, cl.movePos.y * scale + scale / 2);
+						}
+					}
+				}
 			}
 			
-			public void draw(System.Drawing.Graphics g, int scale)
+			public void draw(System.Drawing.Graphics g, int scale, bool drawTeleArrows)
 			{
-				if (grid != bgGrid || scale != bgScale || bgBmp == null)
+				if (grid != bgGrid || scale != bgScale || drawTeleArrows != bgDrawTeleArrows || bgBmp == null)
 				{
-					drawBG(scale);
+					drawBG(scale, drawTeleArrows);
 				}
 				
 				g.DrawImage(bgBmp, 0, 0);
@@ -1051,7 +1071,7 @@ namespace ppcggacscontroller
 			{
 				List<int> scores = new List<int>();
 				
-				for (int i = 0; i < consts.repeatCount; i++)
+				for (int i = 0; i++ < consts.repeatCount;)
 				{
 					Console.WriteLine("Running game {0}", i);
 					
@@ -1290,7 +1310,7 @@ namespace ppcggacscontroller
 			}
 			
 #if! nogdi
-			public void draw(System.Drawing.Graphics g, int scale)
+			public void draw(System.Drawing.Graphics g, int scale, bool drawTeleArrows)
 			{
 				if (b == null)
 					return;
@@ -1298,7 +1318,7 @@ namespace ppcggacscontroller
 				lock (drawLock)
 				{
 				
-					b.draw(g, scale);
+					b.draw(g, scale, drawTeleArrows);
 					
 					HashSet<Board.Position> pps = new HashSet<Board.Position>();
 					
@@ -1309,7 +1329,7 @@ namespace ppcggacscontroller
 							continue;
 						pps.Add(p);
 						
-						System.Drawing.Brush brsh = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 0, 255 - (int)(255.0 / (1.0 + (double)s.fitness / 10.0)), 100));
+						System.Drawing.Brush brsh = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 0, 255 - (int)(255.0 / (1.0 + (double)s.fitness / 50.0)), 100));
 						
 						g.FillRectangle(brsh, p.x * scale + 2, p.y * scale + 2, scale - 4, scale - 4);
 					}
