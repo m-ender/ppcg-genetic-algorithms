@@ -1,11 +1,9 @@
-BOARD_WIDTH = 200
-BOARD_HEIGHT = 50
-
+from constants import UNSAFE_BOARD_WIDTH, BOARD_HEIGHT
 
 class Coordinate():
     def __init__(self, x, y):
         self.x = x
-        self.y = y 
+        self.y = y
         self.hash = hash((x, y))
 
     def __add__(self, other):
@@ -13,6 +11,9 @@ class Coordinate():
 
     def __sub__(self, other):
         return Coordinate(self.x-other.x, self.y-other.y)
+        
+    def __neg__(self):
+        return Coordinate(-self.x, -self.y)
 
     def __hash__(self):
         return self.hash
@@ -27,6 +28,6 @@ class Coordinate():
         return self.x < 0 or self.y < 0 or self.y >= BOARD_HEIGHT
 
     def at_finish(self):
-        return not(self.out_of_bounds()) and self.x >= BOARD_WIDTH
+        return not(self.out_of_bounds()) and self.x >= UNSAFE_BOARD_WIDTH
 
 directions = [Coordinate(x,y) for x in (-1,0,1) for y in (-1,0,1)]

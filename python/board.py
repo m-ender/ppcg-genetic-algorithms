@@ -1,35 +1,45 @@
 from random import Random
-from coordinates import BOARD_HEIGHT, BOARD_WIDTH, Coordinate
-from trap import trap_types, Trap
+from coordinates import Coordinate
+from trap import trap_types, Trap, TeleportationTrap
 from square import Square
+from sys import version_info
+from constants import BOARD_EXTENDED_WIDTH, UNSAFE_BOARD_WIDTH, BOARD_HEIGHT, OUT_OF_BOUNDS_COLOR
 
-OUT_OF_BOUNDS_COLOR = -1
-
+if version_info >= (3,):
+    xrange = range
 
 class Board(object):
     def __init__(self, seed, colors):
         self.random = Random(seed)
         self.specimens = {}
-        self.traps = {}
         self.next_specimens = {}
         self.changed_cells = set()
         self.out_of_bounds = Square(OUT_OF_BOUNDS_COLOR)
         self.out_of_bounds.killer = True
-        self.finish_line = Square(colors[-1])
-        self.squares = [[Square(self.random.choice(colors))
-                        for __ in xrange(BOARD_WIDTH)]
-                        for __ in xrange(BOARD_HEIGHT)]
-        self.traps = [Trap(self, Coordinate(0, 0))]*len(colors)
-        self.starting_squares = []
+        self.all_colors = [color for color in colors]
+        self.traps = [Trap(Coordinate(0, 0))]*len(colors)
         for trap_type in trap_types:
-            used_traps = self.random.sample(trap_type.possible_directions,
-                                            trap_type.max_traps)
+            if trap_type is TeleportationTrap:
+                used_traps = []
+                for i in range(trap_type.max_traps):
+                    if i % 2:
+                        used_traps.append(-used_traps[-1])
+                    else:
+                        used_traps.append(self.random.choice(trap_type.possible_directions))
+            else:
+                used_traps = [self.random.choice(trap_type.possible_directions) for i in range(trap_type.max_traps)]
             coloring = zip(used_traps, colors)
             colors = colors[len(used_traps):]
             for direction, color in coloring:
-                self.traps[color] = trap_type(self, direction)
+                self.traps[color] = trap_type(direction)
+        safe_colors = colors
+        self.squares = [[Square(self.random.choice(
+            self.all_colors if x < UNSAFE_BOARD_WIDTH else safe_colors))
+            for x in xrange(BOARD_EXTENDED_WIDTH)] for __ in xrange(BOARD_HEIGHT)]
+
+        self.starting_squares = []
         for y in xrange(BOARD_HEIGHT):
-            for x in xrange(BOARD_WIDTH):
+            for x in xrange(BOARD_EXTENDED_WIDTH):
                 coordinate = Coordinate(x, y)
                 self.changed_cells.add(coordinate)
                 trap = self.traps[self.get_square(coordinate).color]
@@ -44,8 +54,6 @@ class Board(object):
     def get_square(self, coordinate):
         if coordinate.out_of_bounds():
             return self.out_of_bounds
-        if coordinate.at_finish():
-            return self.finish_line
         return self.squares[coordinate.y][coordinate.x]
 
     def add_specimen(self, specimen, coordinates):
