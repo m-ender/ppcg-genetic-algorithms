@@ -45,7 +45,7 @@ namespace ppcggacscontroller
 		
 		private void invalidateMe()
 		{
-			this.Invoke(new Action(() => this.Refresh()));
+			this.Invoke(new Action(() => viewF.Refresh()));
 		}
 		
 		public void tick()
