@@ -117,7 +117,7 @@ NUMBER_OF_BOARDS.times do |board_number|
     end
 
     $TotalFitness = $MaxFitness = $AllTimeMaxFitness = 0
-    total_points = 0
+    total_points = 1
 
     start = Time.now
 
@@ -150,5 +150,5 @@ end
 if NUMBER_OF_BOARDS > 1
     puts "========================================="
     puts "Individual scores: #{game_records}"
-    puts "On average, your bot got #{game_records.reduce(:+)/NUMBER_OF_BOARDS.to_f} points."
+    puts "Your overall score is #{game_records.reduce(:*)**(1/NUMBER_OF_BOARDS.to_f)}."
 end
