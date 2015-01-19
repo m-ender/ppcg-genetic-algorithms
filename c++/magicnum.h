@@ -2,7 +2,7 @@
 
 
 const int 
-    DNA_BITS = 50,
+    DNA_BITS = 100,
     GRID_X = 50,
     GRID_Y = 15,
     VIEW_DIST = 2,
@@ -18,17 +18,23 @@ const int
     N_COLORS_TRAP = 2,
     N_COLORS_WALL = 2,
     GAME_DURATION = 10*1000,
-    N_GAMES = 10;
+    N_GAMES = 50;
 const double     
     PROB_MUTATION = 0.01,
     PROB_CROSSOVER = 0.05;
 
+//Multithreading
+
+#define USE_MULTITHREADING 0
+const int N_THREADS = 4;
+    
+    
 
 // Logging 
     
-const int N_TURNS_PRINTINFO = 1500;
+const int N_TURNS_PRINTINFO = 2500;
 const bool PRINT_SQUARE_INFO = true,
-           PRINT_GRID = true,
+           PRINT_GRID = false,
            PRINT_X = false;
 std::ostream &slog = std::clog;
 
