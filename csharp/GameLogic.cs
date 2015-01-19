@@ -1,14 +1,20 @@
 ﻿/**
  * Loosley based off this: https://github.com/mbuettner/ppcg-genetic-algorithms/tree/master/c%2B%2B
- * Should conform to the Spec as of 2015-01-18 21:32 UTC: http://meta.codegolf.stackexchange.com/questions/2140/sandbox-for-proposed-challenges/4656#4656
+ * Should conform to the Spec as of 2015-01-19 16:00 UTC: http://meta.codegolf.stackexchange.com/questions/2140/sandbox-for-proposed-challenges/4656#4656
  * 
  * If it breaks, shout at VisualMelon
  */
+
+// testGenome means that we create TestGenomes, instead of ManGenomes, which run ManGenomes and BarrGenomes together to check the former works
+// #define testGenome
 
 using System;
 using BitArr = System.Collections.BitArray;
 using System.Collections.Generic;
 using System.Linq;
+
+// for brutal (and necessary) testing of the ManGenome testing
+//using Genome = ppcggacscontroller.GameLogic.TestGenome;
 
 // sorry about the naming, never written code for someone else to use before
 
@@ -33,7 +39,7 @@ namespace ppcggacscontroller
 			
 			// game
 			public int turnCount = 10000;
-			public int repeatCount = 20;
+			public int repeatCount = 50;
 			
 			public int initialSpecimenCount = 15;
 			public int turnsPerBreeding = 1;
@@ -166,29 +172,101 @@ namespace ppcggacscontroller
 			bool this[int idx] {get;}
 			
 			/// <summary>
-			/// Grab a clone of the bit array used internally
-			/// </summary>
-			BitArr getBitArray();
-			
-			/// <summary>
 			/// The length of the Genome
 			/// </summary>
 			int length {get;}
+			
+			uint cutOutInt(int idx, int len);
 		}
 		
-		private class Genome : IGenome
+#if testGenome
+		private class TestGenome : IGenome
 		{
-			private BitArr barr;
+			private IGenome g;
 			
-			private Genome(GameConstants consts)
+			public TestGenome(GameConstants consts, Random rnd, IGenome a, IGenome b)
 			{
-				barr = new BitArr(consts.genomeSize);
+				//g = new ManGenome(consts, rnd, a, b);
+				
+				int seed = rnd.Next();
+				Random mrnd = new Random(seed);
+				Random brnd = new Random(seed);
+				
+				ManGenome mg = new ManGenome(consts, mrnd, a, b);
+				BarrGenome bg = new BarrGenome(consts, brnd, a, b);
+				
+				for (int i = 0; i < mg.length; i++)
+				{
+					if (bg[i] != mg[i])
+						throw new Exception("err");
+					
+					for (int j = 0; j <= 32 && i + j < mg.length; j++)
+					{
+						if (bg.cutOutInt(i, j) != mg.cutOutInt(i, j))
+							throw new Exception("err " + i + " " + j);
+					}
+				}
+				
+				g = mg;
 			}
 			
-			public Genome(GameConstants consts, Random rnd, Genome a, Genome b) : this(consts)
+			public TestGenome(GameConstants consts, Random rnd)
 			{
-				Genome cur = a;
-				Genome oth = b;
+				g = new ManGenome(consts, rnd);
+			}
+			
+			public bool this[int idx]
+			{
+				get
+				{
+					return g[idx];
+				}
+			}
+			
+			public int length
+			{
+				get
+				{
+					return g.length;
+				}
+			}
+			
+			public uint cutOutInt(int idx, int len)
+			{
+				return g.cutOutInt(idx, len);
+			}
+			
+			System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+			{
+				return GetEnumerator();
+			}
+			
+			// TODO: make this faster
+			public IEnumerator<bool> GetEnumerator()
+			{
+				return g.GetEnumerator();
+			}
+		}
+#endif
+
+		private class ManGenome : IGenome
+		{
+			private uint[] ints;
+			private int glen;
+			readonly int k = sizeof(uint) * 8;
+			
+			private ManGenome(GameConstants consts)
+			{
+				glen = consts.genomeSize;
+				
+				ints = new uint[(glen - 1) / k + 1];
+			}
+			
+			// I hate this method
+			public ManGenome(GameConstants consts, Random rnd, IGenome a, IGenome b) : this(consts)
+			{
+				IGenome cur = a;
+				IGenome oth = b;
 				
 				Action swap = () =>
 				{
@@ -200,27 +278,166 @@ namespace ppcggacscontroller
 				if (rnd.NextDouble() < 0.5)
 					swap();
 				
-				for (int i = 0; i < barr.Length; i++)
+				int j = ints.Length;
+				uint c = 0;
+				
+				for (int i = glen - 1; i >= 0; i--)
 				{
-					barr[i] = cur[i];
+					bool t = cur[i];
 					
 					if (rnd.NextDouble() < consts.genomeMutateRate)
-						barr[i] = !barr[i];
+						t = !t;
+					
+					c = c << 1;
+					if (t)
+						c++;
+					
+					if (i % k == 0)
+					{
+						ints[--j] = c;
+						c = 0;
+					}
 					
 					if (rnd.NextDouble() < consts.genomeSwapRate)
 						swap();
 				}
 			}
 			
-			public Genome(GameConstants consts, Random rnd) : this(consts)
+			public ManGenome(GameConstants consts, Random rnd) : this(consts)
+			{
+				byte[] bytes = new byte[4];
+				
+				for (int i = 0; i < ints.Length; i++)
+				{
+					rnd.NextBytes(bytes);
+					ints[i] = (uint)(((uint)bytes[0] << 24) + (bytes[1] << 16) + (bytes[2] << 8) + bytes[3]);
+				}
+			}
+			
+			public uint cutOutInt(int idx, int len)
+			{
+				if (idx < 0 || idx + len > glen)
+					throw new Exception("Range out of bounds in Genome, looked up range at " + idx + " of length " + len + " in Genome of length " + glen);
+				
+				if (len > k || len < 0)
+					throw new Exception("Invalid length provided, Len of " + len + " asked for, " + k + " is max len, cannot be negative");
+				
+				if (len == 0)
+					return 0;
+				
+				int i = idx / k;
+				int s = idx % k;
+				int f = s + len;
+				
+				uint n = 0;
+				
+				if (f > k)
+					n = ((uint)ints[i] >> s) + (((uint)ints[i + 1] << (k-(f-k))) >> (k-len));
+				else
+					n = ((uint)ints[i] << (k-f)) >> (k-len);
+				
+				return n;
+			}
+			
+			public bool this[int idx]
+			{
+				get
+				{
+					if (idx >= glen)
+						throw new Exception("Index out of bounds in Genome, looked up " + idx + " in Genome of length " + glen);
+				
+					int i = idx / k;
+					uint b = (uint)1 << (idx % k);
+					return (ints[i] & b) != 0;
+				}
+				private set
+				{
+					int i = idx / k;
+					uint b = (uint)1 << (idx % k);
+					if (value)
+						ints[i] |= b;
+					else
+						ints[i] &= ~b;
+				}
+			}
+			
+			public int length
+			{
+				get
+				{
+					return glen;
+				}
+			}
+			
+			System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+			{
+				return GetEnumerator();
+			}
+			
+			// TODO: make this faster
+			public IEnumerator<bool> GetEnumerator()
+			{
+				for (int i = 0; i < glen; i++)
+				{
+					yield return this[i];
+				}
+			}
+		}
+		
+#if testGenome
+		private class BarrGenome : IGenome
+		{
+			private BitArr barr;
+			
+			private BarrGenome(GameConstants consts)
+			{
+				barr = new BitArr(consts.genomeSize);
+			}
+			
+			public BarrGenome(GameConstants consts, Random rnd, IGenome a, IGenome b) : this(consts)
+			{
+				IGenome cur = a;
+				IGenome oth = b;
+				
+				Action swap = () =>
+				{
+					var t = cur;
+					cur = oth;
+					oth = t;
+				};
+				
+				if (rnd.NextDouble() < 0.5)
+					swap();
+				
+				for (int i = barr.Length - 1; i >= 0; i--)
+				{
+					bool t = cur[i];
+					
+					if (rnd.NextDouble() < consts.genomeMutateRate)
+						t = !t;
+					
+					barr[i] = t;
+					
+					if (rnd.NextDouble() < consts.genomeSwapRate)
+						swap();
+				}
+			}
+			
+			public BarrGenome(GameConstants consts, Random rnd) : this(consts)
 			{
 				for (int i = 0; i < barr.Length; i++)
 					barr[i] = rnd.NextDouble() < 0.5;
 			}
 
-			public BitArr getBitArray()
+			public uint cutOutInt(int idx, int len)
 			{
-				return (BitArr)barr.Clone();
+				uint n = 0;
+				for (int i = len - 1; i >= 0; i--)
+				{
+					n = n * 2 + (uint)(barr[i + idx] ? 1 : 0);
+				}
+				
+				return n;
 			}
 			
 			public bool this[int idx]
@@ -250,6 +467,7 @@ namespace ppcggacscontroller
 					yield return b;
 			}
 		}
+#endif
 		
 		private class Specimen
 		{
@@ -258,7 +476,7 @@ namespace ppcggacscontroller
 			public int score;
 			private int fitnessScoreCoef;
 			
-			public Genome g {get; private set;}
+			public IGenome g {get; private set;}
 			
 			public long fitness
 			{
@@ -268,15 +486,19 @@ namespace ppcggacscontroller
 				}
 			}
 			
-			public Specimen(Genome gN, GameConstants consts)
+			public Specimen(IGenome gN, GameConstants consts)
 			{
 				g = gN;
 				fitnessScoreCoef = consts.fitnessScoreCoef;
 			}
 			
-			public Genome cross(GameConstants consts, Random rnd, Specimen other)
+			public IGenome cross(GameConstants consts, Random rnd, Specimen other)
 			{
-				return new Genome(consts, rnd, g, other.g);
+#if testGenome
+				return new TestGenome(consts, rnd, g, other.g);
+#else
+				return new ManGenome(consts, rnd, g, other.g);
+#endif
 			}
 		}
 		
@@ -290,7 +512,6 @@ namespace ppcggacscontroller
 			public Player(PlayerDel pdN)
 			{
 				pd = pdN;
-				score = 0;
 			}
 		}
 		
@@ -307,6 +528,8 @@ namespace ppcggacscontroller
 				// the Color of the Cell
 				public Color trueColor {get; private set;}
 				
+				public View view {get; private set;}
+				
 				public Cell(Position truePosN, Color trueColorN)
 				{
 					truePos = truePosN;
@@ -314,6 +537,12 @@ namespace ppcggacscontroller
 					trueColor = trueColorN;
 					
 					lethal = false;
+				}
+				
+				public void createView(GameConstants consts)
+				{
+					view = new View(consts);
+					view.see(truePos);
 				}
 				
 				public void apply(Color c)
@@ -533,6 +762,11 @@ namespace ppcggacscontroller
 					}
 				}
 				
+				foreach (Cell cl in grid)
+				{
+					cl.createView(consts);
+				}
+				
 				// verify
 				if (!verify())
 					goto again;
@@ -630,6 +864,11 @@ namespace ppcggacscontroller
 				}
 			}
 			
+			public View getView(int x, int y)
+			{
+				return grid[x, y].view;
+			}
+			
 			// evaluate a move onto this position
 			public SpecimenState move(Position ipos, int ox, int oy, out Position rpos)
 			{
@@ -641,13 +880,14 @@ namespace ppcggacscontroller
 				int x = ipos.x + ox;
 				int y = ipos.y + oy;
 				
-				rpos = new Position(this, x, y);
-				
-				SpecimenState premss = boundsCheck(rpos.x, rpos.y);
+				SpecimenState premss = boundsCheck(x, y);
 				if (premss == SpecimenState.Dead)
+				{
+					rpos = new Position(this, x, y);
 					return SpecimenState.Dead;
+				}
 				
-				rpos = grid[rpos.x, rpos.y].moveFrom(ipos);
+				rpos = grid[x, y].moveFrom(ipos);
 				
 				SpecimenState postmss = boundsCheck(rpos.x, rpos.y);
 				if (postmss != SpecimenState.Alive)
@@ -733,7 +973,7 @@ namespace ppcggacscontroller
 				specimens = new List<Specimen>();
 			}
 			
-			private void addSpecimen(Genome g)
+			private void addSpecimen(IGenome g)
 			{
 				Specimen s = new Specimen(g, consts);
 				resetSpecimen(s);
@@ -747,7 +987,7 @@ namespace ppcggacscontroller
 			}
 			
 			// returns the score (mean score)
-			public decimal runSession()
+			public double runSession()
 			{
 				List<int> scores = new List<int>();
 				
@@ -763,12 +1003,26 @@ namespace ppcggacscontroller
 					Console.WriteLine();
 				}
 				
-				Console.WriteLine("Scores: " + string.Join(", ", scores));
+				Console.WriteLine("Scores: " + string.Join(", ", scores.Select(s => s.ToString()).ToArray()));
 				
-				decimal mean = (decimal)plyr.score / (decimal)consts.repeatCount;
-				Console.WriteLine("Average score is " + scores.Average());
+				double finalScore = geoMean(scores.Select(s => (double)s));
+				Console.WriteLine("Final score is " + finalScore);
 				
-				return mean;
+				return finalScore;
+			}
+			
+			private static double geoMean(IEnumerable<double> values)
+			{
+				double pac = 1;
+				int n = 0;
+				
+				foreach (double v in values)
+				{
+					pac *= v;
+					n++;
+				}
+				
+				return Math.Pow(pac, 1.0 / (double)n);
 			}
 			
 			private void runGame()
@@ -778,12 +1032,16 @@ namespace ppcggacscontroller
 				
 				Console.WriteLine(b.numStartCells + " start cells");
 				
-				plyr.score = 0;
+				plyr.score = 1;
 				specimens.Clear();
 				
 				for (int i = 0; i < consts.initialSpecimenCount; i++)
 				{
-					addSpecimen(new Genome(consts, rnd));
+#if testGenome
+					addSpecimen(new TestGenome(consts, rnd));
+#else
+					addSpecimen(new ManGenome(consts, rnd));
+#endif
 				}
 				
 				// run
@@ -863,8 +1121,6 @@ namespace ppcggacscontroller
 			
 			private void move()
 			{
-				View v = new View(consts); // reusable
-				
 				for (int i = specimens.Count - 1; i >= 0; i--)
 				{
 					Specimen s = specimens[i];
@@ -879,8 +1135,7 @@ namespace ppcggacscontroller
 					
 					int ox, oy;
 					
-					v.see(s.pos);
-					plyr.pd.Invoke(v, s.g, out ox, out oy);
+					plyr.pd.Invoke(b.getView(s.pos.x, s.pos.y), s.g, out ox, out oy);
 					
 					Board.Position npos;
 					SpecimenState sstate = s.pos.move(ox, oy, out npos);

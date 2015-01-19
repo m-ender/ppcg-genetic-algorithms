@@ -33,25 +33,11 @@ namespace ppcggacscontroller
 		public static void Main(string[] args)
 		{
 			// create a game instance, passing it your GameLogic.PlayerDel
-			GameLogic.Game g = new GameLogic.Game(LemmingPlayer);
+			GameLogic.Game g = new GameLogic.Game(ColorScorePlayer);
 			// run it
 			g.runSession();
 			
 			Console.ReadKey(true);
-		}
-		
-		// Cut out an int from the given Genome
-		// This will be a method provded by the Genome in the future, and will be faster
-		// Currently it is very slow
-		private static int cutOutInt(GameLogic.IGenome g, int idx, int len)
-		{
-			int n = 0;
-			for (int i = len - 1; i >= 0; i--)
-			{
-				n = n * 2 + (g[i + idx] ? 1 : 0);
-			}
-			
-			return n;
 		}
 		
 		// fgrr likes to go forward
@@ -81,7 +67,7 @@ namespace ppcggacscontroller
 				{
 					for (int i = j * k; i < j * k + k; i++)
 					{
-						int ci = cutOutInt(g, i * 4, 4);
+						uint ci = g.cutOutInt(i * 4, 4);
 					
 						if (v[c.x, c.y] == ci)
 						{
@@ -99,7 +85,7 @@ namespace ppcggacscontroller
 				{
 					for (int i = j * k; i < j * k + k; i++)
 					{
-						int ci = cutOutInt(g, i * 4, 4);
+						uint ci = g.cutOutInt(i * 4, 4);
 					
 						if (v[c.x, c.y] == ci)
 						{
@@ -136,7 +122,7 @@ namespace ppcggacscontroller
 			
 			int s = 0;
 			for (int i = 0; i < 25; i++)
-				s += cutOutInt(g, 2 * i, 2) * v[i / 5 - 2, i % 5 - 2];
+				s += (int)g.cutOutInt(2 * i, 2) * v[i / 5 - 2, i % 5 - 2];
 			
 			Coord res = restrictedCoords[(s + rcCount * 1000/*bignumber*/) % rcCount];
 			
@@ -163,8 +149,8 @@ namespace ppcggacscontroller
 			ox = 0;
 			oy = 0;
 			
-			var max_score = cspcoords.Where(c => v[c.x, c.y] > -1).Select(c => cutOutInt(g, 6 * v[c.x, c.y], 6)).Max();
-			var restrictedCoords = cspcoords.Where(c => v[c.x, c.y] > -1 && cutOutInt(g, 6 * v[c.x, c.y], 6) == max_score).ToArray();
+			var max_score = cspcoords.Where(c => v[c.x, c.y] > -1).Select(c => g.cutOutInt(6 * v[c.x, c.y], 6)).Max();
+			var restrictedCoords = cspcoords.Where(c => v[c.x, c.y] > -1 && g.cutOutInt(6 * v[c.x, c.y], 6) == max_score).ToArray();
 			
 			Coord res = restrictedCoords[rnd.Next(restrictedCoords.Length)];
 			
