@@ -461,7 +461,7 @@ double runsimulation(player_t player) {
     }
 #else
     for(int i = 0; i < N_GAMES; i++) {
-        scores[i] = rungame(player, makeseed(myi));
+        scores[i] = rungame(player, makeseed(i));
         slog << "Scored " << scores[i] << " in game " << i << '\n';
     }
 #endif
