@@ -1014,15 +1014,11 @@ namespace ppcggacscontroller
 			private static double geoMean(IEnumerable<double> values)
 			{
 				double pac = 1;
-				int n = 0;
-				
+
 				foreach (double v in values)
-				{
-					pac *= v;
-					n++;
-				}
+					pac += Math.Log(v);
 				
-				return Math.Pow(pac, 1.0 / (double)n);
+				return Math.Exp(pac);
 			}
 			
 			private void runGame()
@@ -1054,6 +1050,8 @@ namespace ppcggacscontroller
 				long spc = 0;
 				
 				long bestFitness = 0;
+				
+				Console.WriteLine("\ttime\tscore\tcount\tavg F\tmax F\ttop F");
 				
 				Action printDiags = () =>
 				{
