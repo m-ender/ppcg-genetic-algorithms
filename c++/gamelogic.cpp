@@ -78,29 +78,31 @@ class board_t {
     
     std::mt19937_64 rndeng;
     
-    void breed() {
-        if(bots.size() < 2) return;
+    void breed(int n) {
+        int bs = bots.size();
+        if(bs < 2) return;
         ull sum = 0;
-        for(int i = 0; i < bots.size(); i++) {
+        for(int i = 0; i < bs; i++) {
             sum += bots[i].fitness();
         }
-        dna_t parents[2], child;
-        long long r = randlong(sum);
-        int i = 0;
-        while( (r -= bots[i].fitness()) >= 0) i++;
-        parents[0] = bots[i].dna;
-        sum -= bots[i].fitness();
-        r = randlong(sum);
-        int i2 = 0;
-        while( (r -= bots[i2].fitness() * (i != i2)) >= 0) i++;
-        parents[1] = bots[i2].dna;
-        
-        int par = randint(2);
-        for(int j = 0; j < DNA_BITS; j++) {
-            child[j] = parents[par][j] ^ (randdouble() < PROB_MUTATION);
-            par ^= randdouble() < PROB_CROSSOVER;
+        while(n--) {
+            dna_t parents[2], child;
+            long long r = randlong(sum);
+            int i0 = 0;
+            while( (r -= bots[i0].fitness()) >= 0) i0++;
+            parents[0] = bots[i0].dna;
+            r = randlong(sum - bots[i0].fitness());
+            int i1 = 0;
+            while( (r -= bots[i1].fitness() * (i0 != i1)) >= 0) i1++;
+            parents[1] = bots[i1].dna;
+            
+            int par = randint(2);
+            for(int j = 0; j < DNA_BITS; j++) {
+                child[j] = parents[par][j] ^ (randdouble() < PROB_MUTATION);
+                par ^= randdouble() < PROB_CROSSOVER;
+            }
+            bots.push_back({child, randomspawnloc()});
         }
-        bots.push_back({child, randomspawnloc()});
     }
     
     coord_t randomspawnloc() {
@@ -108,7 +110,6 @@ class board_t {
     }
     
     void gengrid() {
-        memset(colorgrid, -1, sizeof(colorgrid));
         memset(colortypes, -1, sizeof(colortypes));
         color_t safes[N_COLORS_SAFE];
         int remc = N_COLORS;
@@ -141,17 +142,24 @@ class board_t {
             memset(tmp, 0, sizeof(tmp));
             //determine trap, tele vectors
             coord_t offset[N_COLORS];
+            int lasttel = -1;
             for(int i = 0; i < N_COLORS; i++) {
                 if(colortypes[i] == C_TRAP) {
                     offset[i].x = randint(-TRAP_DIST,TRAP_DIST);
                     offset[i].y = randint(-TRAP_DIST,TRAP_DIST);
-                } else if(colortypes[i] == C_TELE) { 
-                    int w = 2 * TELE_DIST + 1;
-                    int r = randint(w*w - 1);  //no null teleporters
-                    offset[i].x = r % w - TELE_DIST;
-                    offset[i].y = r / w - TELE_DIST;
-                    if(!offset[i].x && !offset[i].y) {
-                        offset[i] = {TELE_DIST, TELE_DIST};
+                } else if(colortypes[i] == C_TELE) {
+                    if(~lasttel) {
+                        offset[i] = {-offset[lasttel].x, -offset[lasttel].y};
+                        lasttel = -1;
+                    } else {
+                        int w = 2 * TELE_DIST + 1;
+                        int r = randint(w*w - 1);  //no null teleporters
+                        offset[i].x = r % w - TELE_DIST;
+                        offset[i].y = r / w - TELE_DIST;
+                        if(!offset[i].x && !offset[i].y) {
+                            offset[i] = {TELE_DIST, TELE_DIST};
+                        }
+                        lasttel = i;
                     }
                 }
             }
@@ -191,31 +199,52 @@ class board_t {
                     destgrid[x][y] = end;
                 }
             }
-printgrid(0);printgrid(1);printgrid(2);
-        } while(!calcsolvability());
 
+            if(PRINT_GRID) {
+                printgrid(0);
+                printgrid(1);
+                printgrid(2);
+            }
+            if(PRINT_SQUARE_INFO) {
+                const char* names[] = {"Safe", "Teleport", "Trap", "Wall"};
+                for(int a = 0; a < N_COLORS; a++) {
+                    colortype_t ct = colortypes[a];
+                    slog << a << ": " << names[ct];
+                    if(ct == C_TELE || ct == C_TRAP) {
+                        slog << ' ' << offset[a].x << ' ' << offset[a].y;
+                    }
+                    slog << '\n';
+                }
+            }
+        } while(calcsolvability() < MIN_START_CELLS);
     }
     
     unsigned calcsolvability() {
+        spawnY.clear();
         for(int y0 = 1; y0 <= GRID_Y; y0++) {
             bool seen[GRID_X][GRID_Y] = {};
             std::vector<coord_t> q;
             seen[1][y0] = true;
             q.push_back({1, y0});
-            while(!q.empty()) {
-                coord_t s = q.back();
-                q.pop_back();
-                for(int x = -1; x <= 1; x++)
-                    for(int y = -1; y <= 1; y++) {
-                        if((x || y) && colortypes[colorgrid[s.x+x][s.y+y]] == C_WALL)
-                            continue;
-                        coord_t next = destgrid[s.x + x][s.y + y];
-                        if(next.x == DEST_GOAL.x) goto win;
-                        if(next.x > 0 && !seen[next.x][next.y]) {
-                            seen[next.x][next.y] = true;
-                            q.push_back(next);
+            int i = 0;
+            for(int i = 0, t = MAX_LIFE; t--; ) {
+                for(int j = q.size(); i < j; i++) {
+                    coord_t s = q[i];
+                    for(int x = -1; x <= 1; x++)
+                        for(int y = -1; y <= 1; y++) {
+                            int X = s.x + x, Y = s.y + y;
+                            if(X < 1 || Y < 1 || Y > GRID_Y) 
+                                continue;
+                            if(colortypes[colorgrid[s.x+x][s.y+y]] == C_WALL)
+                                continue;
+                            coord_t next = destgrid[s.x + x][s.y + y];
+                            if(next.x == DEST_GOAL.x) goto win;
+                            if(next.x > 0 && !seen[next.x][next.y]) {
+                                seen[next.x][next.y] = true;
+                                q.push_back(next);
+                            }
                         }
-                    }
+                }
             }
             continue;
           win:
@@ -239,7 +268,7 @@ public:
         for(int i = N_INITIAL_BOTS; i--; ) {
             dna_t dna;
             for(int j = 0; j < DNA_BITS; j++) dna[j] = randint(2);
-            bots.emplace_back(bot_t{dna, randomspawnloc()});
+            bots.push_back(bot_t{dna, randomspawnloc()});
        }
     }
         
@@ -256,6 +285,12 @@ public:
     
     void runframe() {
         for(int i = 0; i < bots.size(); i++) {
+            if(bots[i].lifetime++ == MAX_LIFE) {
+                bots[i] = bots.back();
+                bots.pop_back();
+                i--;
+                continue;
+            } 
             coord_t move = movefunc(bots[i].dna, view_t(this, bots[i].position));
             if(abs(move.x) > 1 || abs(move.y) > 1) {
                 move = {0, 0};
@@ -275,9 +310,10 @@ public:
                 bots[i].position = randomspawnloc();
                 bots[i].lifetime = 0;
             } else {
-                if(++bots[i].lifetime == MAX_LIFE) {
+                if(bots[i].lifetime++ == MAX_LIFE) {
                     bots[i] = bots.back();
                     bots.pop_back();
+                    i--;
                 } else {
                     bots[i].position = dest;
                 }
@@ -285,9 +321,7 @@ public:
         }
         if(++spawntimer == SPAWN_PERIOD) {
             spawntimer = 0;
-            for(int n = SPAWN_AMOUNT; n--; ) {
-                breed();
-            }
+            breed(SPAWN_AMOUNT);
         }
     }
     
@@ -297,6 +331,15 @@ public:
     
     int n_alive() {
         return bots.size();
+    }
+    
+    int maxfitness() {
+        int m = -1;
+        for(int i = 0; i < bots.size(); i++) {
+            int f = bots[i].fitness();
+            if(f > m) m = f;
+        }
+        return m;
     }
     
     int randint(int n) {
@@ -320,7 +363,7 @@ public:
                 colortype_t t;
                 if (x>0&&x<GRID_X+VIEW_DIST&&y>0&&y<=GRID_Y) {
                     c = colorgrid[x][y];
-                    if(c < -0 || c >= N_COLORS) {
+                    if(c < 0 || c >= N_COLORS) {
                         slog << "bad color";
                         return;
                     }
@@ -357,18 +400,19 @@ color_t view_t::operator() (int x, int y) {
         slog << "Attempted to view square out of range\n";
         return OUT_OF_BOUNDS;
     }
-    if(x < 1 || y < 1 || y > GRID_Y)
-        return OUT_OF_BOUNDS;
-    return board.colorgrid[pos.x+x][pos.y+y];
+    return board.color(pos.x + x, pos.y + y);
 }
 
+
 int rungame(player_t player) {
-    board_t b(player/*, 1421320494465294900LL*/);
+    board_t b(player);
     for(int i = 0; i < GAME_DURATION; i++) {
-        if(i % 1000 == 0) {
-            slog << "Turns:" << i << " Specimens: " << b.n_alive() 
-                << " Score: " << b.score() << '\n';
-b.printx();
+        if(i % N_TURNS_PRINTINFO == 0) {
+            slog << "Turns:" << i 
+                 << " Specimens: " << b.n_alive() 
+                 << " Max fitness: " << b.maxfitness()
+                 << " Score: " << b.score() << '\n';
+            if(PRINT_X) b.printx();
         }
         b.runframe();
     }
@@ -377,11 +421,17 @@ b.printx();
 
 double runsimulation(player_t player) {
     int sum = 0;
+    int scores[N_GAMES];
     for(int i = 0; i < N_GAMES; i++) {
         int sc = rungame(player);
         slog << "Scored " << sc << " in game " << i << '\n';
         sum += sc;
+        scores[i] = sc;
     }
+    slog << "Scores:";
+    for(int i = 0; i < N_GAMES; i++)
+        slog << ' ' << scores[i];
+    slog<<'\n';
     return sum / (double)N_GAMES;
 }
 
