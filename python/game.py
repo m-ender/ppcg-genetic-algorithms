@@ -173,7 +173,7 @@ def run():
     for board_number in xrange(NUMBER_OF_BOARDS):
         global TotalFitness, MaxFitness, AllTimeMaxFitness
         AllTimeMaxFitness = 0
-        total_points = 0
+        total_points = 1
         print("Running board #"+str(board_number+1)+"/"+str(NUMBER_OF_BOARDS))
         board = initialize_board()
         start = time.time()
@@ -210,8 +210,14 @@ def run():
     if NUMBER_OF_BOARDS > 1:
         print("=========================================")
         print("Individual scores: "+str(game_records))
-        print("On average, your bot got "+str(sum(game_records)/float(NUMBER_OF_BOARDS))+" points")
+        print("On average, your bot got "+str(geometric_mean(game_records))+" points")
 
+
+def geometric_mean(game_records):
+    logs = [log(score) for score in game_records]
+    log_average = exp(sum(logs)/float(len(logs)))
+    return log_average
+    
 
 if __name__ == "__main__":
     run()

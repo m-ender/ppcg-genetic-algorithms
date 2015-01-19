@@ -1,6 +1,7 @@
 # All constants in one place for clarity
 
 from __future__ import print_function
+from math import exp, log
 
 BOARD_WIDTH = 50
 BOARD_HEIGHT = 15
