@@ -1,7 +1,6 @@
 require_relative 'constants'
 require_relative 'vector2d'
 require_relative 'cell'
-require_relative 'random'
 require_relative 'board'
 require_relative 'specimen'
 require_relative 'player'
@@ -70,7 +69,7 @@ def breed(board, turn)
         selected_parents = []
         remaining_total = $TotalFitness
         NUMBER_OF_PARENTS.times do
-            count_down = RNG.rand(remaining_total)
+            count_down = $RNG.rand(remaining_total)
             selected = false
             board.specimens.each do |coord, specimens|
                 specimens.each do |specimen|
@@ -91,12 +90,12 @@ def breed(board, turn)
     end
 
     parent_groups.each do |parents|
-        parent = parents.sample
+        parent = parents.sample(random: $RNG)
         new_genome = 0
         (GENOME_LENGTH-1).downto(0).each do |position|
-            parent = parents.sample if RNG.rand < GENOME_CROSSOVER_RATE
+            parent = parents.sample(random: $RNG) if $RNG.rand < GENOME_CROSSOVER_RATE
             bit = parent.bit_at(position)
-            b = 1-bit if RNG.rand < GENOME_MUTATION_RATE
+            b = 1-bit if $RNG.rand < GENOME_MUTATION_RATE
             new_genome = (new_genome << 1) + bit
         end
         raise "Genome too long: #{new_genome}" if new_genome > GENOME_MAX_VALUE
@@ -104,16 +103,20 @@ def breed(board, turn)
     end
 end
 
-player = PLAYER.new
+player = nil
 
 game_records = []
 
 NUMBER_OF_BOARDS.times do |board_number|
     puts "Running board ##{board_number+1}/#{NUMBER_OF_BOARDS}"
-    board = Board.new(RNG)
+    $RNG = Random.new(rand(2**64))
+    puts "Initialized new RNG with seed #{$RNG.seed}"
+    puts
+    board = Board.new($RNG)
+    player = PLAYER.new($RNG)
 
     INITIAL_SPECIMENS.times do
-        board.add_specimen(Specimen.new(RNG.rand(GENOME_MAX_VALUE)))
+        board.add_specimen(Specimen.new($RNG.rand(GENOME_MAX_VALUE)))
     end
 
     $TotalFitness = $MaxFitness = $AllTimeMaxFitness = 0
