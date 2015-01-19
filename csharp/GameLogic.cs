@@ -27,7 +27,7 @@ namespace ppcggacscontroller
 			// board
 			public int boardWidth = 53;
 			public int goalX = 49;
-			public int boardHeight = 15;
+			public int boardHeight = 50;
 		
 			public int safeColCount = 8;
 			public int trapColCount = 2;

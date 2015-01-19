@@ -29,7 +29,6 @@ enum colortype_t {
     C_WALL
 };
 
-
 typedef std::bitset<DNA_BITS> dna_t;
 struct coord_t {
     int x,y;
@@ -42,6 +41,7 @@ const coord_t DEST_DEATH = {-1}, DEST_GOAL = {-2};
 
 
 typedef unsigned long long ull;
+
 
 struct bot_t {
     dna_t dna;
@@ -432,7 +432,11 @@ int rungame(player_t player, ull seed) {
 }
 
 ull makeseed(int i) {
+#ifdef RANDOM_SEED
+    return RANDOM_SEED;
+#else
     return ((ull)i << 40) ^ std::chrono::high_resolution_clock().now().time_since_epoch().count();
+#endif
 }
 double runsimulation(player_t player) {
     int scores[N_GAMES];
