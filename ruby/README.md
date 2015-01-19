@@ -27,7 +27,7 @@ Your subclass should implement a method `turn` which takes no parameters and ret
 
 There are a few simple example subclasses to give you the idea of how this works.
 
-### Python versions
+### Ruby versions
 
 The controller has been tested in **Ruby 2.0.0**, but should work with any newer version as well.
 
