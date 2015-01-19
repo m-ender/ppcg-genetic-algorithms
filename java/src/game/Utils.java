@@ -29,7 +29,7 @@ public class Utils {
     }
 
     public static <T> T pickOne(List<T> list){
-        return list.get(Game.random.nextInt(list.size()));
+        return list.get(Constants.random.nextInt(list.size()));
     }
 
     public static Point scale(Point point, int scalar){

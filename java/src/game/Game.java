@@ -3,75 +3,95 @@ package game;
 import game.display.Display;
 import game.players.Player;
 
+import javax.swing.text.BadLocationException;
+
+import static game.Constants.*;
+
 import java.util.*;
 import java.awt.*;
 import java.util.List;
 
 public class Game {
-    public static final int NUMBER_OF_BOARDS = 1;
-    public static final int NUMBER_OF_TURNS = 10000;
-    public static final int INITIAL_SPECIMEN = 50;
-    public static final int SPECIMEN_LIFESPAN = 500;
-    public static final int REPRODUCTION_RATE = 1;
-    public static final int NUM_PARENTS = 2;
-    public static final int DNA_LENGTH = 50;
-    public static final long MAX_DNA = Math.round(Math.pow(2, DNA_LENGTH - 1));
-    public static final long MIN_DNA = -MAX_DNA-1;
-    public static final double CROSSOVER_RATE = .1;
-    public static final double DNA_MUTATION_RATE = .01;
-    public static final int VISION_WIDTH = 5;
-    public static final int RANDOM_SEED = 1778884;
-
-    public static final Random random = new Random(RANDOM_SEED);
 
     public static void main(String[] args){
         run();
     }
     public static void run(){
-        Player player = new Player();
+        Player player = Player.currentPlayer;
         int totalPoints = 0;
+        List<Integer> gameRecords = new ArrayList<Integer>(NUMBER_OF_BOARDS);
         for (int boardNumber = 0; boardNumber < NUMBER_OF_BOARDS; boardNumber++){
             System.out.println("Running board #"+(boardNumber+1)+"/"+NUMBER_OF_BOARDS);
             Board board = new Board();
+            long startTime = System.nanoTime();
             Display display = new Display(board);
-            int reproductionCounter = 0;
             for (int turnNumber = 0; turnNumber < NUMBER_OF_TURNS; turnNumber++){
                 totalPoints += takeTurn(board, turnNumber, player);
                 if (!lifeExists(board))
                     break;
-                reproductionCounter += REPRODUCTION_RATE;
-                for (;reproductionCounter > 0; reproductionCounter--){
-                    breed(board, turnNumber);
-                }
+                breed(board, turnNumber, REPRODUCTION_RATE);
                 display.repaint();
+                if (turnNumber % (NUMBER_OF_TURNS/100) == 0){
+                    int population = 0;
+                    for (Point point: board.getSpecimenLocations()){
+                        population += board.getSpecimen(point).size();
+                    }
+                    System.out.printf("%3d%% ", turnNumber*100/ NUMBER_OF_TURNS);
+                    System.out.printf("%5.4f sec ",(System.nanoTime()-startTime)/1000000000.0);
+                    System.out.printf("%10d ",totalPoints);
+                    System.out.printf("Pop %5d ", population);
+                    System.out.printf("Fit ");
+                    System.out.printf("Avg %11.3f ", Statistics.getTotalFitness()*1.0/population);
+                    System.out.printf("Max %5d ", Statistics.getMaxFitness());
+                    System.out.printf("AllTimeMax %5d ", Statistics.getAllTimeMaxFitness());
+                    System.out.println();
+                }
             }
             for (Point coordinate: board.getSpecimenLocations()){
                 if (Board.atFinish(coordinate)){
                     totalPoints += board.getSpecimen(coordinate).size();
                 }
             }
+            System.out.println("Your bot got "+totalPoints+" points");
+            gameRecords.add(totalPoints);
+            display.dispose();
         }
-        System.out.println("Your bot got "+totalPoints+" points");
+        if (NUMBER_OF_BOARDS > 1){
+            System.out.println("=========================================");
+            System.out.print("Individual scores: ");
+            int sum = 0;
+            for (int score: gameRecords){
+                System.out.print(score+", ");
+                sum += score;
+            }
+            System.out.println("On average, your bot got "+sum*1.0/NUMBER_OF_BOARDS+" points");
+        }
+
     }
     public static int takeTurn(Board board, int turnNumber, Player player){
         int points = 0;
         for (Point location: board.getSpecimenLocations()){
+            if (Board.atFinish(location)){
+                for (Specimen specimen: board.getSpecimen(location)){
+                    Point newLocation = Utils.pickOne(board.startingSquares);
+                    specimen.birthTurn = turnNumber;
+                    specimen.bonusFitness += BOARD_WIDTH;
+                    board.addSpecimen(specimen, newLocation);
+                    points += 1;
+                }
+            }
             for (Specimen specimen: board.getSpecimen(location)){
                 if (turnNumber == specimen.birthTurn + SPECIMEN_LIFESPAN){
-                    if (Board.atFinish(location)){
-                        points += 1;
-                    }
                     continue;
                 }
-                if (Board.atFinish(location)){
-                    board.addSpecimen(specimen, location);
-                    continue;
-                }
-                List<Integer> colors = new ArrayList<Integer>();
+                Map<Point, Integer> colors = new HashMap<Point, Integer>();
                 for (Point offset:Utils.createArea(VISION_WIDTH)){
-                    colors.add(board.getSquare(Utils.add(offset, location)).colorCode.number);
+                    colors.put(offset, board.getSquare(Utils.add(offset, location)).colorCode.number);
                 }
-                Point direction = player.takeTurn(specimen, colors);
+                Point direction = player.takeTurn(specimen.genome, colors);
+                if (direction.x*direction.x + direction.y*direction.y > 2){
+                    throw new RuntimeException("Direction out of bounds");
+                }
                 Point newLocation = Utils.add(direction, location);
                 Square newSquare = board.getSquare(newLocation);
                 if (newSquare.isWall){
@@ -79,7 +99,7 @@ public class Game {
                     newLocation = location;
                 }
                 Point teleported = Utils.add(newSquare.teleportsTo, newLocation);
-                if (board.getSquare(teleported).kills && !Board.atFinish(teleported)){
+                if (board.getSquare(teleported).kills){
                     continue;
                 }
                 board.addSpecimen(specimen, teleported);
@@ -89,47 +109,71 @@ public class Game {
         return points;
     }
     public static boolean lifeExists(Board board){
-        return board.getSpecimenLocations().size() > NUM_PARENTS;
-    }
-    public static void breed(Board board, int turnNumber){
-        int total = 0;
+        if (board.getSpecimenLocations().size() > NUM_PARENTS)
+            return true;
+        int population = 0;
         for (Point point: board.getSpecimenLocations()){
-            total += (point.x+1)*board.getSpecimen(point).size();
-        }
-        Map<Point, Integer> selectedCoordinates = new HashMap<Point, Integer>();
-        for (int i = 0; i < NUM_PARENTS; i++) {
-            int countDown = random.nextInt(total);
-            for (Point point : board.getSpecimenLocations()) {
-                int alreadySelected = 0;
-                if (selectedCoordinates.containsKey(point)) {
-                    alreadySelected = selectedCoordinates.get(point);
-                }
-                countDown -= (point.x + 1) * (board.getSpecimen(point).size() - alreadySelected);
-                if (countDown < 0) {
-                    selectedCoordinates.put(point, alreadySelected + 1);
-                    break;
-                }
+            population += board.getSpecimen(point).size();
+            if (population >= NUM_PARENTS){
+                return true;
             }
         }
-        ArrayList<Specimen> chosenSpecimen = new ArrayList<Specimen>(NUM_PARENTS);
-        for (Point point: selectedCoordinates.keySet()){
-            List<Specimen> specimen = board.getSpecimen(point);
-            Collections.shuffle(specimen);
-            chosenSpecimen.addAll(specimen.subList(0, selectedCoordinates.get(point)));
-        }
-        Specimen currentParent = Utils.pickOne(chosenSpecimen);
-        long newDNA= 0;
-        for (int j = DNA_LENGTH-1; j >=0; j--){
-            if (random.nextDouble() < CROSSOVER_RATE){
-                currentParent = Utils.pickOne(chosenSpecimen);
-            }
-            int bit = currentParent.bitAt(j);
-            if (random.nextDouble() < DNA_MUTATION_RATE){
-                bit = -bit+1;
-            }
-            newDNA = (newDNA+bit) <<2;
-        }
-        board.addSpecimen(new Specimen(newDNA, turnNumber), Utils.pickOne(board.startingSquares));
+        return false;
+    }
 
+    public static int scoreSpecimen(Point coordinate, Specimen specimen){
+        return coordinate.x + specimen.bonusFitness + 1;
+    }
+
+    public static void breed(Board board, int turnNumber, int numberOffspring){
+        Statistics.restart();
+        for (Point point: board.getSpecimenLocations()){
+            for (Specimen specimen: board.getSpecimen(point)){
+                int fitness = scoreSpecimen(point, specimen);
+                Statistics.updateFitness(fitness);
+            }
+        }
+        for (int i = 0; i < numberOffspring; i++){
+            List<Specimen> selectedSpecimen = new ArrayList<Specimen>(NUM_PARENTS);
+            int remainingTotal = Statistics.getTotalFitness();
+            for (int j = 0; j < NUM_PARENTS; j++){
+                int countDown;
+                try {
+                    countDown = random.nextInt(remainingTotal);
+                } catch (IllegalArgumentException e){
+                    System.out.println(Statistics.getTotalFitness());
+                    throw e;
+                }
+                for (Point point: board.getSpecimenLocations()){
+                    for (Specimen specimen: board.getSpecimen(point)){
+                        if (selectedSpecimen.contains(specimen))
+                            continue;
+                        int score = scoreSpecimen(point, specimen);
+                        countDown -= score;
+                        if (countDown < 0){
+                            selectedSpecimen.add(specimen);
+                            remainingTotal -= score;
+                            break;
+                        }
+                    }
+                    if (countDown < 0){
+                        break;
+                    }
+                }
+            }
+            Specimen currentParent = Utils.pickOne(selectedSpecimen);
+            StringBuilder newGenome = new StringBuilder();
+            for (int j = 0; j < GENOME_LENGTH; j++){
+                if (random.nextDouble() < GENOME_CROSSOVER_RATE){
+                    currentParent = Utils.pickOne(selectedSpecimen);
+                }
+                int bit = currentParent.bitAt(j);
+                if (random.nextDouble() < GENOME_MUTATION_RATE){
+                    bit = -bit+1;
+                }
+                newGenome.append(bit);
+            }
+            board.addSpecimen(new Specimen(newGenome.toString(), turnNumber), Utils.pickOne(board.startingSquares));
+        }
     }
 }

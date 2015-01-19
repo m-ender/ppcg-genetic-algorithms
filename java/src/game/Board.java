@@ -5,6 +5,7 @@ import game.traps.*;
 import java.awt.Point;
 import java.util.*;
 import java.util.List;
+import static game.Constants.*;
 
 public class Board {
     private HashMap<Point, List<Specimen>> specimens;
@@ -13,11 +14,8 @@ public class Board {
     public final List<Point> startingSquares;
     private final Square outOfBoundsSquare;
     private final List<Square> finishLine;
-    public final ArrayList<Point> allLocations;
 
 
-    public static final int BOARD_WIDTH = 200;
-    public static final int BOARD_HEIGHT = 50;
 
     public Board(){
         specimens = new HashMap<Point, List<Specimen>>();
@@ -26,7 +24,6 @@ public class Board {
         startingSquares = new ArrayList<Point>();
         outOfBoundsSquare = new Square(new ColorCode(-1));
         finishLine = new ArrayList<Square>();
-        allLocations = new ArrayList<Point>();
         Trap.initialize();
         for (ColorCode colorCode: EmptyTrap.EMPTY_TRAPS.keySet()){
             finishLine.add(new Square(colorCode));
@@ -54,15 +51,17 @@ public class Board {
     }
 
     private void addSpecimens(){
-        for (int i = 0; i < Game.INITIAL_SPECIMEN; i++){
-            long dna = Game.MIN_DNA+(long)(Game.random.nextDouble()*(Game.MAX_DNA-Game.MIN_DNA));
-            this.addSpecimen(new Specimen(dna, 0), Utils.pickOne(startingSquares));
+        for (int i = 0; i < INITIAL_SPECIMENS; i++){
+            StringBuilder builder = new StringBuilder();
+            for (int j = 0; j < GENOME_LENGTH; j++){
+                builder.append(random.nextBoolean()?"1":"0");
+            }
+            this.addSpecimen(new Specimen(builder.toString(), 0), Utils.pickOne(startingSquares));
         }
         updateSpecimen();
     }
 
     private void ensureCrossable(){
-        boolean foundPath = false;
         for (int y = 0; y < BOARD_HEIGHT; y++){
             Point startPoint = new Point(0, y);
             HashSet<Point> currentSquares = new HashSet<Point>();
@@ -99,18 +98,16 @@ public class Board {
                 currentSquares = nextSquares;
                 nextSquares = new HashSet<Point>();
             }
-            if (foundExit){
-                foundPath = true;
-            }
         }
-        if (!foundPath){
+        if (startingSquares.size() < 10){
+            startingSquares.clear();
             generateSquares();
             ensureCrossable();
         }
     }
 
     public static boolean atFinish(Point point){
-        return !outOfBounds(point) && point.x >= BOARD_WIDTH;
+        return !outOfBounds(point) && point.x >= UNSAFE_BOARD_WIDTH;
     }
 
     public static boolean outOfBounds(Point point){
@@ -137,7 +134,6 @@ public class Board {
                 square.isWall = true;
                 square.kills = true;
             }
-            allLocations.add(point);
         }
     }
     public Square getSquare(Point point){
