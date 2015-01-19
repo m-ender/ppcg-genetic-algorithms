@@ -42,7 +42,7 @@ WALL_COLOR = (128, 128, 128)
 #from text_display import Display
 from no_display import Display
 
-NUMBER_OF_BOARDS = 20
+NUMBER_OF_BOARDS = 50
 
 NUMBER_OF_COLORS = sum([trap_type.max_traps for trap_type in trap.trap_types])\
                    + NUMBER_OF_SAFE_COLORS
