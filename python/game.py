@@ -56,9 +56,9 @@ def initialize_board():
 def take_turn(board, turn_number, player):
     points = 0
     for coordinate, specimens in board.specimens.items():
-        if coordinate.at_finish():
+        for specimen in specimens:
             #Send winners back to start
-            for specimen in specimens:
+            if coordinate.at_finish():
                 points += 1
                 new_start_coords = random.choice(board.starting_squares)
                 specimen.birth = turn_number
@@ -68,7 +68,6 @@ def take_turn(board, turn_number, player):
                 else:
                     board.next_specimens[new_start_coords] = [specimen]
                 continue
-        for specimen in specimens:
             #Kill specimens of old age
             if turn_number == specimen.birth + SPECIMEN_LIFESPAN:
                 continue
