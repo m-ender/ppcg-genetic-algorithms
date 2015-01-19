@@ -58,6 +58,16 @@ namespace ppcggacscontroller
 			// views
 			public int viewDimX = 2;
 			public int viewDimY = 2;
+			
+#if! nogdi
+			// display
+			public System.Drawing.Brush emptyBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 255, 255, 255));
+			public System.Drawing.Brush specimenBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 0, 0, 0));
+			public System.Drawing.Brush deathBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 255, 128, 128));
+			public System.Drawing.Brush teleBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 128, 128, 255));
+			public System.Drawing.Brush wallBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 128, 128, 128));
+			public System.Drawing.Brush goalBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 64, 128, 64));
+#endif
 		}
 		
 		private enum SpecimenState
@@ -502,7 +512,7 @@ namespace ppcggacscontroller
 			}
 		}
 		
-		public delegate void PlayerDel(IView v, IGenome g, out int ox, out int oy);
+		public delegate void PlayerDel(IView v, IGenome g, Random r, out int ox, out int oy);
 		
 		private class Player
 		{
@@ -981,33 +991,27 @@ namespace ppcggacscontroller
 				{
 					for (int j = 0; j < height; j++)
 					{
-						System.Drawing.Brush brsh = System.Drawing.Brushes.MintCream;
+						System.Drawing.Brush brsh = consts.emptyBrush;
 						
 						if (boundsCheck(i, j) == SpecimenState.Win)
-							brsh = System.Drawing.Brushes.LightGoldenrodYellow;
+							brsh = consts.goalBrush;
 						
 						Cell cl = grid[i, j];
 						
 						if (cl.trueColor.type == ColorType.Wall)
-							brsh = System.Drawing.Brushes.DarkGray;
+							brsh = consts.wallBrush;
 						else if (cl.trueColor.type == ColorType.Tele)
-							brsh = System.Drawing.Brushes.LightPink;
+							brsh = consts.teleBrush;
+						else if (cl.lethal)
+							brsh = consts.deathBrush;
 						
-						if (cl.lethal)
-						{
-							g.FillRectangle(System.Drawing.Brushes.Red, i * scale + 1, j * scale + 1, scale - 2, scale - 2);
-							g.FillRectangle(brsh, i * scale + 2, j * scale + 2, scale - 4, scale - 4);
-						}
-						else
-						{
-							g.FillRectangle(brsh, i * scale + 1, j * scale + 1, scale - 2, scale - 2);
-						}
+						g.FillRectangle(brsh, i * scale, j * scale, scale, scale);
 					}
 				}
 				
 				if (drawTeleArrows)
 				{
-					System.Drawing.Pen telePen = new System.Drawing.Pen(System.Drawing.Color.Black, 1);
+					System.Drawing.Pen telePen = new System.Drawing.Pen(System.Drawing.Color.DarkGray, 1);
 					telePen.StartCap = System.Drawing.Drawing2D.LineCap.NoAnchor;
 					telePen.EndCap = System.Drawing.Drawing2D.LineCap.ArrowAnchor;
 					
@@ -1231,7 +1235,7 @@ namespace ppcggacscontroller
 					
 					int ox, oy;
 					
-					plyr.pd.Invoke(b.getView(s.pos.x, s.pos.y), s.g, out ox, out oy);
+					plyr.pd.Invoke(b.getView(s.pos.x, s.pos.y), s.g, rnd, out ox, out oy);
 					
 					Board.Position npos;
 					SpecimenState sstate = s.pos.move(ox, oy, out npos);
@@ -1329,9 +1333,12 @@ namespace ppcggacscontroller
 							continue;
 						pps.Add(p);
 						
-						System.Drawing.Brush brsh = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 0, 255 - (int)(255.0 / (1.0 + (double)s.fitness / 50.0)), 100));
+						System.Drawing.Brush brsh = consts.specimenBrush;
 						
-						g.FillRectangle(brsh, p.x * scale + 2, p.y * scale + 2, scale - 4, scale - 4);
+						// too much fun
+						//brsh = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 0, 255 - (int)(255.0 / (1.0 + (double)s.fitness / 50.0)), 100));
+						
+						g.FillRectangle(brsh, p.x * scale + 1, p.y * scale + 1, scale - 2, scale - 2);
 					}
 					
 				}
