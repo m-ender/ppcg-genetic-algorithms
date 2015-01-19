@@ -2,7 +2,7 @@
 
 ### Running the game
 
-Clone the repository and run as
+Clone the repository, go into the `./python` directory and run as
 
     python game.py
 
