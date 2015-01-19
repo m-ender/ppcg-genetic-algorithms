@@ -10,6 +10,7 @@ const int
     TRAP_DIST = 1, //changing this would not 100% work
     MAX_LIFE = 100,
     N_INITIAL_BOTS = 15,
+    MIN_START_CELLS = 10,
     SPAWN_PERIOD = 1,
     SPAWN_AMOUNT = 10,
     N_COLORS_SAFE = 8,
@@ -25,7 +26,10 @@ const double
 
 // Logging 
     
-const int N_TURNS_PRINTINFO = 8000;
+const int N_TURNS_PRINTINFO = 1500;
+const bool PRINT_SQUARE_INFO = true,
+           PRINT_GRID = true,
+           PRINT_X = false;
 std::ostream &slog = std::clog;
 
 
