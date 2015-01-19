@@ -1,7 +1,11 @@
 ﻿/**
- * Couple of test players
+ * Notes to people using the controller:
+ *  - see the Main method for an example of how to use the controller
+ *  - see the examples methods which can be passed to GameLogic.Game class
+ *     - these should behave just like those found in the python examples
+ *  - your method must accept a GameLogic.IView, a GameLogic.IGenome, and pass out the x offset, and y offset of your chosen movement
  * 
- *
+ * If the controller breaks, shout at VisualMelon
  */
 
 using System;
@@ -11,6 +15,7 @@ namespace ppcggacscontroller
 {
 	class Program
 	{
+		// convienience struct
 		public struct Coord
 		{
 			public int x, y;
@@ -21,20 +26,25 @@ namespace ppcggacscontroller
 				y = yN;
 			}
 		}
+
+		// handy Random
+		private static Random rnd = new Random();
 		
 		public static void Main(string[] args)
 		{
 			// create a game instance, passing it your GameLogic.PlayerDel
-			GameLogic.Game g = new GameLogic.Game(LinearCombinationPlayer);
+			GameLogic.Game g = new GameLogic.Game(LemmingPlayer);
 			// run it
 			g.runSession();
 			
 			Console.ReadKey(true);
 		}
 		
+		// Cut out an int from the given Genome
+		// This will be a method provded by the Genome in the future, and will be faster
+		// Currently it is very slow
 		private static int cutOutInt(GameLogic.IGenome g, int idx, int len)
 		{
-			// do this the slow way
 			int n = 0;
 			for (int i = len - 1; i >= 0; i--)
 			{
@@ -111,7 +121,7 @@ namespace ppcggacscontroller
 //			new Coord(-1, 0),
 //			new Coord(0, 0),
 //			new Coord(-1, 1),
-//			new Coord(0, -1),
+//			new Coord(0, 1),
 			new Coord(1, 1),
 		};
 		
@@ -127,9 +137,58 @@ namespace ppcggacscontroller
 			int s = 0;
 			for (int i = 0; i < 25; i++)
 				s += cutOutInt(g, 2 * i, 2) * v[i / 5 - 2, i % 5 - 2];
-			g.getBitArray();
 			
 			Coord res = restrictedCoords[(s + rcCount * 1000/*bignumber*/) % rcCount];
+			
+			ox = res.x;
+			oy = res.y;	
+		}
+		
+		// Color Score Player is a port from the Python one here https://github.com/mbuettner/ppcg-genetic-algorithms/tree/master/python/player.py
+		public static Coord[] cspcoords = new [] {
+//			new Coord(-1, -1),
+//			new Coord(0, -1),
+			new Coord(1, 0),
+			new Coord(1, -1),
+//			new Coord(-1, 0),
+//			new Coord(0, 0),
+//			new Coord(-1, 1),
+//			new Coord(0, 1),
+			new Coord(1, 1),
+		};
+
+		// this implementation isn't inefficient atall		
+		public static void ColorScorePlayer(GameLogic.IView v, GameLogic.IGenome g, out int ox, out int oy)
+		{
+			ox = 0;
+			oy = 0;
+			
+			var max_score = cspcoords.Where(c => v[c.x, c.y] > -1).Select(c => cutOutInt(g, 6 * v[c.x, c.y], 6)).Max();
+			var restrictedCoords = cspcoords.Where(c => v[c.x, c.y] > -1 && cutOutInt(g, 6 * v[c.x, c.y], 6) == max_score).ToArray();
+			
+			Coord res = restrictedCoords[rnd.Next(restrictedCoords.Length)];
+			
+			ox = res.x;
+			oy = res.y;	
+		}
+		
+		// Color Score Player is a port from the Python one here https://github.com/mbuettner/ppcg-genetic-algorithms/tree/master/python/player.py
+		public static Coord[] lpcoords = new [] {
+			new Coord(-1, -1),
+//			new Coord(0, -1),
+			new Coord(1, 0),
+//			new Coord(1, -1),
+			new Coord(-1, 0),
+//			new Coord(0, 0),
+			new Coord(-1, 1),
+//			new Coord(0, 1),
+//			new Coord(1, 1),
+		};
+
+		// this implementation isn't inefficient atall		
+		public static void LemmingPlayer(GameLogic.IView v, GameLogic.IGenome g, out int ox, out int oy)
+		{
+			Coord res = lpcoords[rnd.Next(lpcoords.Length)];
 			
 			ox = res.x;
 			oy = res.y;	

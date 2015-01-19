@@ -1,5 +1,6 @@
 ﻿/**
  * Loosley based off this: https://github.com/mbuettner/ppcg-genetic-algorithms/tree/master/c%2B%2B
+ * Should conform to the Spec as of 2015-01-18 21:32 UTC: http://meta.codegolf.stackexchange.com/questions/2140/sandbox-for-proposed-challenges/4656#4656
  * 
  * If it breaks, shout at VisualMelon
  */
@@ -472,8 +473,6 @@ namespace ppcggacscontroller
 					if (ox == 0 && oy == 0) // no thanks
 						goto reo;
 					
-					Console.WriteLine(ox + " " + oy);
-					
 					Color c;
 					
 					c = new Color(nextColorId(), ColorType.Tele, ox, oy);
@@ -809,9 +808,9 @@ namespace ppcggacscontroller
 						+ "\t" +
 						specimens.Count
 						+ "\t" +
-						specimens.Average(s => s.fitness).ToString("0.00")
+						(specimens.Count == 0 ? "-" : specimens.Average(s => s.fitness).ToString("0.00"))
 						+ "\t" +
-						specimens.Max(s => s.fitness)
+						(specimens.Count == 0 ? "-" : specimens.Max(s => s.fitness).ToString())
 						+ "\t" +
 						bestFitness
 					); 
@@ -831,10 +830,13 @@ namespace ppcggacscontroller
 					
 					move();
 					
-					// update bestFitness
-					long tbf = specimens.Max(s => s.fitness);
-					if (tbf > bestFitness)
-						bestFitness = tbf;
+					if (specimens.Count > 0)
+					{
+						// update bestFitness
+						long tbf = specimens.Max(s => s.fitness);
+						if (tbf > bestFitness)
+							bestFitness = tbf;
+					}
 					
 					if (--diagTicker == 0)
 					{
@@ -855,7 +857,8 @@ namespace ppcggacscontroller
 				printDiags();
 				Console.WriteLine(turn + " last turn");
 				Console.WriteLine(spc + " specimen turns");
-				Console.WriteLine(((decimal)spc / (decimal)sw.ElapsedMilliseconds * 1000M) + " specimen turns per second");
+				if (sw.ElapsedMilliseconds > 0)
+					Console.WriteLine(((decimal)spc / (decimal)sw.ElapsedMilliseconds * 1000M) + " specimen turns per second");
 			}
 			
 			private void move()
