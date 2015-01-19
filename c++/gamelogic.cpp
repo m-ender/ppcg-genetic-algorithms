@@ -294,7 +294,7 @@ public:
     board_t(player_t player, ull rndseed): 
             rng(rndseed), 
             movefunc(player),
-            totalscore(0),
+            totalscore(1),
             spawntimer(0) {
         
         slog << "Board created with random seed " << rndseed << '\n';
@@ -428,7 +428,7 @@ int rungame(player_t player, ull seed) {
         }
         b.runframe();
     }
-    return b.score() + 1;
+    return b.score();
 }
 
 ull makeseed(int i) {
