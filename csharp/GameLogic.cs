@@ -58,6 +58,16 @@ namespace ppcggacscontroller
 			// views
 			public int viewDimX = 2;
 			public int viewDimY = 2;
+			
+#if! nogdi
+			// display
+			public System.Drawing.Brush emptyBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 255, 255, 255));
+			public System.Drawing.Brush specimenBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 0, 0, 0));
+			public System.Drawing.Brush deathBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 255, 128, 128));
+			public System.Drawing.Brush teleBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 128, 128, 255));
+			public System.Drawing.Brush wallBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 128, 128, 128));
+			public System.Drawing.Brush goalBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 64, 128, 64));
+#endif
 		}
 		
 		private enum SpecimenState
@@ -502,7 +512,7 @@ namespace ppcggacscontroller
 			}
 		}
 		
-		public delegate void PlayerDel(IView v, IGenome g, out int ox, out int oy);
+		public delegate void PlayerDel(IView v, IGenome g, Random r, out int ox, out int oy);
 		
 		private class Player
 		{
@@ -739,7 +749,7 @@ namespace ppcggacscontroller
 							rndc = rndColor();
 						}
 						
-						grid[i, j] = new Cell(new Position(this, i, j), rndColor());
+						grid[i, j] = new Cell(new Position(this, i, j), rndc);
 					}
 				}
 				
@@ -954,10 +964,84 @@ namespace ppcggacscontroller
 					writer.WriteLine();
 				}
 			}
+			
+#if! nogdi
+			private Cell[,] bgGrid = null;
+			private int bgScale = -1;
+			private bool bgDrawTeleArrows = false;
+			private System.Drawing.Bitmap bgBmp;
+			
+			private void drawBG(int scale, bool drawTeleArrows)
+			{
+				int w = scale * width;
+				int h = scale * height;
+				
+				if (bgBmp != null)
+					bgBmp.Dispose();
+				
+				bgGrid = grid;
+				bgScale = scale;
+				bgDrawTeleArrows = drawTeleArrows;
+				
+				bgBmp = new System.Drawing.Bitmap(w, h);
+				
+				System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bgBmp);
+				
+				for (int i = 0; i < width; i++)
+				{
+					for (int j = 0; j < height; j++)
+					{
+						System.Drawing.Brush brsh = consts.emptyBrush;
+						
+						if (boundsCheck(i, j) == SpecimenState.Win)
+							brsh = consts.goalBrush;
+						
+						Cell cl = grid[i, j];
+						
+						if (cl.trueColor.type == ColorType.Wall)
+							brsh = consts.wallBrush;
+						else if (cl.trueColor.type == ColorType.Tele)
+							brsh = consts.teleBrush;
+						else if (cl.lethal)
+							brsh = consts.deathBrush;
+						
+						g.FillRectangle(brsh, i * scale, j * scale, scale, scale);
+					}
+				}
+				
+				if (drawTeleArrows)
+				{
+					System.Drawing.Pen telePen = new System.Drawing.Pen(System.Drawing.Color.DarkGray, 1);
+					telePen.StartCap = System.Drawing.Drawing2D.LineCap.NoAnchor;
+					telePen.EndCap = System.Drawing.Drawing2D.LineCap.ArrowAnchor;
+					
+					foreach (Cell cl in grid)
+					{
+						if (cl.trueColor.type == ColorType.Tele)
+						{
+							g.DrawLine(telePen, cl.truePos.x * scale + scale / 2, cl.truePos.y * scale + scale / 2, cl.movePos.x * scale + scale / 2, cl.movePos.y * scale + scale / 2);
+						}
+					}
+				}
+			}
+			
+			public void draw(System.Drawing.Graphics g, int scale, bool drawTeleArrows)
+			{
+				if (grid != bgGrid || scale != bgScale || drawTeleArrows != bgDrawTeleArrows || bgBmp == null)
+				{
+					drawBG(scale, drawTeleArrows);
+				}
+				
+				g.DrawImage(bgBmp, 0, 0);
+			}
+#endif
 		}
 		
 		public class Game
 		{
+			private Object drawLock = new Object();
+			public IDisplay displayer {get; set;}
+			
 			private Board b;
 			
 			private Player plyr;
@@ -991,7 +1075,7 @@ namespace ppcggacscontroller
 			{
 				List<int> scores = new List<int>();
 				
-				for (int i = 0; i < consts.repeatCount; i++)
+				for (int i = 0; i++ < consts.repeatCount;)
 				{
 					Console.WriteLine("Running game {0}", i);
 					
@@ -1013,31 +1097,41 @@ namespace ppcggacscontroller
 			
 			private static double geoMean(IEnumerable<double> values)
 			{
-				double pac = 1;
-
-				foreach (double v in values)
-					pac += Math.Log(v);
+				double pac = 0;
+				int n = 0;
 				
-				return Math.Exp(pac);
+				foreach (double v in values)
+				{
+					pac += Math.Log(v);
+					n++;
+				}
+				
+				return Math.Exp(pac / (double)n);
 			}
 			
 			private void runGame()
 			{
 				// init
-				b = new Board(consts, rnd);
 				
-				Console.WriteLine(b.numStartCells + " start cells");
-				
-				plyr.score = 1;
-				specimens.Clear();
-				
-				for (int i = 0; i < consts.initialSpecimenCount; i++)
+				lock (drawLock)
 				{
-#if testGenome
-					addSpecimen(new TestGenome(consts, rnd));
-#else
-					addSpecimen(new ManGenome(consts, rnd));
-#endif
+					
+					b = new Board(consts, rnd);
+					
+					Console.WriteLine(b.numStartCells + " start cells");
+					
+					plyr.score = 1;
+					specimens.Clear();
+					
+					for (int i = 0; i < consts.initialSpecimenCount; i++)
+					{
+	#if testGenome
+						addSpecimen(new TestGenome(consts, rnd));
+	#else
+						addSpecimen(new ManGenome(consts, rnd));
+	#endif
+					}
+				
 				}
 				
 				// run
@@ -1084,28 +1178,36 @@ namespace ppcggacscontroller
 					
 					spc += specimens.Count;
 					
-					move();
-					
-					if (specimens.Count > 0)
+					lock (drawLock)
 					{
-						// update bestFitness
-						long tbf = specimens.Max(s => s.fitness);
-						if (tbf > bestFitness)
-							bestFitness = tbf;
+						
+						move();
+						
+						if (specimens.Count > 0)
+						{
+							// update bestFitness
+							long tbf = specimens.Max(s => s.fitness);
+							if (tbf > bestFitness)
+								bestFitness = tbf;
+						}
+						
+						if (--diagTicker == 0)
+						{
+							printDiags();
+							diagTicker = diagInterval;
+						}
+						
+						// breed
+						if (--breedTicker == 0)
+						{
+							breed();
+							breedTicker = consts.turnsPerBreeding;
+						}
+						
 					}
 					
-					if (--diagTicker == 0)
-					{
-						printDiags();
-						diagTicker = diagInterval;
-					}
-					
-					// breed
-					if (--breedTicker == 0)
-					{
-						breed();
-						breedTicker = consts.turnsPerBreeding;
-					}
+					if (displayer != null)
+						displayer.tick();
 				}
 				
 				sw.Stop();
@@ -1133,7 +1235,7 @@ namespace ppcggacscontroller
 					
 					int ox, oy;
 					
-					plyr.pd.Invoke(b.getView(s.pos.x, s.pos.y), s.g, out ox, out oy);
+					plyr.pd.Invoke(b.getView(s.pos.x, s.pos.y), s.g, rnd, out ox, out oy);
 					
 					Board.Position npos;
 					SpecimenState sstate = s.pos.move(ox, oy, out npos);
@@ -1165,7 +1267,9 @@ namespace ppcggacscontroller
 			
 			private Specimen[][] grabDistinctGrouped(int groups, int groupSize)
 			{
-				long maxRnd = specimens.Sum(s => s.fitness);
+				long maxRnd = 0L;
+				foreach (Specimen s in specimens)
+					maxRnd += s.fitness;
 				
 				Specimen[][] res = new GameLogic.Specimen[groups][];
 				
@@ -1208,6 +1312,38 @@ namespace ppcggacscontroller
 				
 				return res;
 			}
+			
+#if! nogdi
+			public void draw(System.Drawing.Graphics g, int scale, bool drawTeleArrows)
+			{
+				if (b == null)
+					return;
+				
+				lock (drawLock)
+				{
+				
+					b.draw(g, scale, drawTeleArrows);
+					
+					HashSet<Board.Position> pps = new HashSet<Board.Position>();
+					
+					foreach (Specimen s in specimens)
+					{
+						Board.Position p = s.pos;
+						if (pps.Contains(p))
+							continue;
+						pps.Add(p);
+						
+						System.Drawing.Brush brsh = consts.specimenBrush;
+						
+						// too much fun
+						//brsh = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 0, 255 - (int)(255.0 / (1.0 + (double)s.fitness / 50.0)), 100));
+						
+						g.FillRectangle(brsh, p.x * scale + 1, p.y * scale + 1, scale - 2, scale - 2);
+					}
+					
+				}
+			}
+#endif
 		}
 		
 		// dies if max <= 0

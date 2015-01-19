@@ -1,6 +1,10 @@
 require_relative 'vector2d'
 
 class Player
+    def initialize(rng)
+        @rng = rng
+    end
+
     def take_turn(genome, vision)
         @genome = genome
         @vision = vision
@@ -30,12 +34,13 @@ end
 
 class RandomPlayer < Player
     def turn
-        Vector2D.new(1,rand(3)-1)
+        Vector2D.new(1,@rng.rand(3)-1)
     end
 end
 
 class LemmingPlayer < Player
-    def initialize
+    def initialize(rng)
+        super(rng)
         @coords = [Vector2D.new(-1,-1),
                    Vector2D.new(-1, 0),
                    Vector2D.new(-1, 1),
@@ -43,12 +48,13 @@ class LemmingPlayer < Player
     end
 
     def turn
-        @coords.sample
+        @coords.sample(random: @rng)
     end
 end
 
 class ColorScorePlayer < Player
-    def initialize
+    def initialize(rng)
+        super(rng)
         @coords = [Vector2D.new( 1,-1),
                    Vector2D.new( 1, 0),
                    Vector2D.new( 1, 1)]
@@ -69,7 +75,7 @@ class ColorScorePlayer < Player
             color >= 0 && bit_chunk(6*color, 6) == max_score
         }
 
-        restricted_coords.sample
+        restricted_coords.sample(random: @rng)
     end
 end
 

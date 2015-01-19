@@ -26,14 +26,13 @@ namespace ppcggacscontroller
 				y = yN;
 			}
 		}
-
-		// handy Random
-		private static Random rnd = new Random();
 		
 		public static void Main(string[] args)
 		{
 			// create a game instance, passing it your GameLogic.PlayerDel
 			GameLogic.Game g = new GameLogic.Game(ColorScorePlayer);
+			// add a display
+			g.displayer = Display.createAndRun(g);
 			// run it
 			g.runSession();
 			
@@ -53,7 +52,7 @@ namespace ppcggacscontroller
 //			new Coord(-1, 0),
 		};
 		
-		public static void fgrr(GameLogic.IView v, GameLogic.IGenome g, out int ox, out int oy)
+		public static void fgrr(GameLogic.IView v, GameLogic.IGenome g, Random rnd, out int ox, out int oy)
 		{
 			// defaults
 			ox = 1; // into the unknown
@@ -112,7 +111,7 @@ namespace ppcggacscontroller
 		};
 		
 		// ported from python, no idea what it does
-		public static void LinearCombinationPlayer(GameLogic.IView v, GameLogic.IGenome g, out int ox, out int oy)
+		public static void LinearCombinationPlayer(GameLogic.IView v, GameLogic.IGenome g, Random rnd, out int ox, out int oy)
 		{
 			ox = 0;
 			oy = 0;
@@ -144,7 +143,7 @@ namespace ppcggacscontroller
 		};
 
 		// this implementation isn't inefficient atall		
-		public static void ColorScorePlayer(GameLogic.IView v, GameLogic.IGenome g, out int ox, out int oy)
+		public static void ColorScorePlayer(GameLogic.IView v, GameLogic.IGenome g, Random rnd, out int ox, out int oy)
 		{
 			ox = 0;
 			oy = 0;
@@ -158,7 +157,27 @@ namespace ppcggacscontroller
 			oy = res.y;	
 		}
 		
-		// Color Score Player is a port from the Python one here https://github.com/mbuettner/ppcg-genetic-algorithms/tree/master/python/player.py
+		public static Coord[] rpcoords = new [] {
+//			new Coord(-1, -1),
+//			new Coord(0, -1),
+			new Coord(1, 0),
+			new Coord(1, -1),
+//			new Coord(-1, 0),
+//			new Coord(0, 0),
+//			new Coord(-1, 1),
+//			new Coord(0, 1),
+			new Coord(1, 1),
+		};
+
+		public static void RandomPlayer(GameLogic.IView v, GameLogic.IGenome g, Random rnd, out int ox, out int oy)
+		{
+			Coord res = rpcoords[rnd.Next(rpcoords.Length)];
+			
+			ox = res.x;
+			oy = res.y;	
+		}
+		
+		// Lemming Player is a port from the Python one here https://github.com/mbuettner/ppcg-genetic-algorithms/tree/master/python/player.py
 		public static Coord[] lpcoords = new [] {
 			new Coord(-1, -1),
 //			new Coord(0, -1),
@@ -171,8 +190,7 @@ namespace ppcggacscontroller
 //			new Coord(1, 1),
 		};
 
-		// this implementation isn't inefficient atall		
-		public static void LemmingPlayer(GameLogic.IView v, GameLogic.IGenome g, out int ox, out int oy)
+		public static void LemmingPlayer(GameLogic.IView v, GameLogic.IGenome g, Random rnd, out int ox, out int oy)
 		{
 			Coord res = lpcoords[rnd.Next(lpcoords.Length)];
 			

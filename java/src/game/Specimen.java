@@ -1,18 +1,17 @@
 package game;
 
 public class Specimen {
-    public final long dna;
-    public final int birthTurn;
-    public Specimen(long dna, int birthTurn){
-        this.dna = dna;
+    public final String genome;
+    public int birthTurn;
+    public int bonusFitness;
+    public Specimen(String genome, int birthTurn){
+        this.genome = genome;
         this.birthTurn = birthTurn;
+        this.bonusFitness = 0;
     }
 
     public int bitAt(int position){
-        return (int)(this.dna >> position) & 1;
+        return Integer.parseInt(genome.charAt(position)+"");
     }
 
-    public long bitRange(int start, int stop){
-        return (this.dna >> start) & ((1 << (stop-start))-1);
-    }
 }

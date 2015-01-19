@@ -1,20 +1,19 @@
 package game.traps;
 
 import game.ColorCode;
-import game.Game;
 import game.Utils;
+import static game.Constants.*;
 
 import java.awt.Point;
 import java.util.*;
 
 public class DeathTrap extends Trap{
-    public static final int NUMBER_OF_DEATH_TRAPS = 4;
     public static void initialize() {
         List<Point> possibleDirections = Utils.createArea(3);
-        Collections.shuffle(possibleDirections, Game.random);
-        ListIterator<Point> directionAssigner = possibleDirections.subList(0, NUMBER_OF_DEATH_TRAPS).listIterator();
-        for (int i = 0; i < NUMBER_OF_DEATH_TRAPS; i++) {
-            allTraps.put(ColorCode.colorAssigner.next(), new DeathTrap(directionAssigner.next()));
+        Collections.shuffle(possibleDirections, random);
+        List<Point> directionAssigner = possibleDirections.subList(0, NUM_KILLER_COLORS);
+        for (int i = 0; i < NUM_KILLER_COLORS; i++) {
+            allTraps.put(ColorCode.colorAssigner.next(), new DeathTrap(Utils.pickOne(directionAssigner)));
         }
     }
     public final Point direction;

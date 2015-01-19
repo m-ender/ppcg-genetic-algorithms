@@ -4,12 +4,10 @@ import game.Specimen;
 
 import java.util.List;
 import java.awt.*;
+import java.util.Map;
 
-public class Player {
-    public Player(){
+public abstract class Player {
+    public static Player currentPlayer = new RandomPlayer();
+    public abstract Point takeTurn(String genome, Map<Point, Integer> vision);
 
-    }
-    public Point takeTurn(Specimen specimen, List<Integer> vision){
-        return new Point(1, 0);
-    }
 }

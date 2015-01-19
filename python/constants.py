@@ -10,9 +10,9 @@ BOARD_EXTENDED_WIDTH = BOARD_WIDTH + 3
 
 OUT_OF_BOUNDS_COLOR = -1
 NUMBER_OF_SAFE_COLORS = 8
-NUMBER_OF_KILLER_TYPES = 3
+NUMBER_OF_KILLER_TYPES = 2
 NUMBER_OF_TELEPORTER_TYPES = 4
-NUMBER_OF_WALL_TYPES = 1
+NUMBER_OF_WALL_TYPES = 2
 MAX_TELEPORT_RADIUS = 4
 
 from board import Board
@@ -42,7 +42,7 @@ WALL_COLOR = (128, 128, 128)
 #from text_display import Display
 from no_display import Display
 
-NUMBER_OF_BOARDS = 20
+NUMBER_OF_BOARDS = 50
 
 NUMBER_OF_COLORS = sum([trap_type.max_traps for trap_type in trap.trap_types])\
                    + NUMBER_OF_SAFE_COLORS

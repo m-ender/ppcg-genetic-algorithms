@@ -6,6 +6,7 @@ class Board
     attr_accessor :specimens
 
     def initialize(rng)
+        @rng = rng
         # Hash from coordinate to list of specimens
         @specimens = {}
 
@@ -19,13 +20,13 @@ class Board
             # Assign available colors to cell types
             remaining_colors = [*0...NUMBER_OF_COLORS]
 
-            empty_colors = remaining_colors.sample(NUMBER_OF_EMPTY_COLORS)
+            empty_colors = remaining_colors.sample(NUMBER_OF_EMPTY_COLORS, random: @rng)
             remaining_colors -= empty_colors
 
-            teleporter_colors = remaining_colors.sample(NUMBER_OF_TELEPORTER_COLORS)
+            teleporter_colors = remaining_colors.sample(NUMBER_OF_TELEPORTER_COLORS, random: @rng)
             remaining_colors -= teleporter_colors
 
-            trap_colors = remaining_colors.sample(NUMBER_OF_TRAP_COLORS)
+            trap_colors = remaining_colors.sample(NUMBER_OF_TRAP_COLORS, random: @rng)
             remaining_colors -= trap_colors
 
             wall_colors = remaining_colors
@@ -40,16 +41,16 @@ class Board
             teleporter_colors.each_slice(2) do |c1, c2|
                 dx = dy = 0
                 while dx == 0 && dy == 0
-                    dx = rng.rand(TELEPORT_WIDTH) - TELEPORT_DISTANCE
-                    dy = rng.rand(TELEPORT_WIDTH) - TELEPORT_DISTANCE
+                    dx = @rng.rand(TELEPORT_WIDTH) - TELEPORT_DISTANCE
+                    dy = @rng.rand(TELEPORT_WIDTH) - TELEPORT_DISTANCE
                 end
                 cell_prototypes[c1] = Teleporter.new(c1, dx, dy)
                 cell_prototypes[c2] = Teleporter.new(c2, -dx, -dy)
             end
 
             trap_colors.each do |c|
-                dx = rng.rand(3) - 1
-                dy = rng.rand(3) - 1
+                dx = @rng.rand(3) - 1
+                dy = @rng.rand(3) - 1
                 cell_prototypes[c] = Trap.new(c, dx, dy)
             end
 
@@ -61,9 +62,9 @@ class Board
             @cells = Array.new(BOARD_EXTENDED_WIDTH) { |x|
                 Array.new(BOARD_HEIGHT) { |y|
                     if x >= UNSAFE_BOARD_WIDTH
-                        Cell.new(empty_colors.sample)
+                        Cell.new(empty_colors.sample(random: @rng))
                     else
-                        cell_prototypes.sample.clone
+                        cell_prototypes.sample(random: @rng).clone
                     end
                 }
             }
@@ -134,7 +135,7 @@ class Board
     end
 
     def add_specimen(specimen)
-        coord = @starting_cells.sample
+        coord = @starting_cells.sample(random: @rng)
         if @specimens[coord]
             @specimens[coord].push specimen
         else
