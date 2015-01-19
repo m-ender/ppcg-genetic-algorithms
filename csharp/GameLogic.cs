@@ -739,7 +739,7 @@ namespace ppcggacscontroller
 							rndc = rndColor();
 						}
 						
-						grid[i, j] = new Cell(new Position(this, i, j), rndColor());
+						grid[i, j] = new Cell(new Position(this, i, j), rndc);
 					}
 				}
 				
@@ -954,10 +954,70 @@ namespace ppcggacscontroller
 					writer.WriteLine();
 				}
 			}
+			
+#if! nogdi
+			private Cell[,] bgGrid = null;
+			private int bgScale = -1;
+			private System.Drawing.Bitmap bgBmp;
+			
+			private void drawBG(int scale)
+			{
+				int w = scale * width;
+				int h = scale * height;
+				
+				if (bgBmp != null)
+					bgBmp.Dispose();
+				
+				bgBmp = new System.Drawing.Bitmap(w, h);
+				
+				System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bgBmp);
+				
+				for (int i = 0; i < width; i++)
+				{
+					for (int j = 0; j < height; j++)
+					{
+						System.Drawing.Brush brsh = System.Drawing.Brushes.MintCream;
+						
+						if (boundsCheck(i, j) == SpecimenState.Win)
+							brsh = System.Drawing.Brushes.LightGoldenrodYellow;
+						
+						Cell cl = grid[i, j];
+						
+						if (cl.trueColor.type == ColorType.Wall)
+							brsh = System.Drawing.Brushes.DarkGray;
+						else if (cl.trueColor.type == ColorType.Tele)
+							brsh = System.Drawing.Brushes.LightPink;
+						
+						if (cl.lethal)
+						{
+							g.FillRectangle(System.Drawing.Brushes.Red, i * scale + 1, j * scale + 1, scale - 2, scale - 2);
+							g.FillRectangle(brsh, i * scale + 2, j * scale + 2, scale - 4, scale - 4);
+						}
+						else
+						{
+							g.FillRectangle(brsh, i * scale + 1, j * scale + 1, scale - 2, scale - 2);
+						}
+					}
+				}
+			}
+			
+			public void draw(System.Drawing.Graphics g, int scale)
+			{
+				if (grid != bgGrid || scale != bgScale || bgBmp == null)
+				{
+					drawBG(scale);
+				}
+				
+				g.DrawImage(bgBmp, 0, 0);
+			}
+#endif
 		}
 		
 		public class Game
 		{
+			private Object drawLock = new Object();
+			public IDisplay displayer {get; set;}
+			
 			private Board b;
 			
 			private Player plyr;
@@ -1013,31 +1073,41 @@ namespace ppcggacscontroller
 			
 			private static double geoMean(IEnumerable<double> values)
 			{
-				double pac = 1;
-
-				foreach (double v in values)
-					pac += Math.Log(v);
+				double pac = 0;
+				int n = 0;
 				
-				return Math.Exp(pac);
+				foreach (double v in values)
+				{
+					pac += Math.Log(v);
+					n++;
+				}
+				
+				return Math.Exp(pac / (double)n);
 			}
 			
 			private void runGame()
 			{
 				// init
-				b = new Board(consts, rnd);
 				
-				Console.WriteLine(b.numStartCells + " start cells");
-				
-				plyr.score = 1;
-				specimens.Clear();
-				
-				for (int i = 0; i < consts.initialSpecimenCount; i++)
+				lock (drawLock)
 				{
-#if testGenome
-					addSpecimen(new TestGenome(consts, rnd));
-#else
-					addSpecimen(new ManGenome(consts, rnd));
-#endif
+					
+					b = new Board(consts, rnd);
+					
+					Console.WriteLine(b.numStartCells + " start cells");
+					
+					plyr.score = 1;
+					specimens.Clear();
+					
+					for (int i = 0; i < consts.initialSpecimenCount; i++)
+					{
+	#if testGenome
+						addSpecimen(new TestGenome(consts, rnd));
+	#else
+						addSpecimen(new ManGenome(consts, rnd));
+	#endif
+					}
+				
 				}
 				
 				// run
@@ -1084,28 +1154,36 @@ namespace ppcggacscontroller
 					
 					spc += specimens.Count;
 					
-					move();
-					
-					if (specimens.Count > 0)
+					lock (drawLock)
 					{
-						// update bestFitness
-						long tbf = specimens.Max(s => s.fitness);
-						if (tbf > bestFitness)
-							bestFitness = tbf;
+						
+						move();
+						
+						if (specimens.Count > 0)
+						{
+							// update bestFitness
+							long tbf = specimens.Max(s => s.fitness);
+							if (tbf > bestFitness)
+								bestFitness = tbf;
+						}
+						
+						if (--diagTicker == 0)
+						{
+							printDiags();
+							diagTicker = diagInterval;
+						}
+						
+						// breed
+						if (--breedTicker == 0)
+						{
+							breed();
+							breedTicker = consts.turnsPerBreeding;
+						}
+						
 					}
 					
-					if (--diagTicker == 0)
-					{
-						printDiags();
-						diagTicker = diagInterval;
-					}
-					
-					// breed
-					if (--breedTicker == 0)
-					{
-						breed();
-						breedTicker = consts.turnsPerBreeding;
-					}
+					if (displayer != null)
+						displayer.tick();
 				}
 				
 				sw.Stop();
@@ -1165,7 +1243,9 @@ namespace ppcggacscontroller
 			
 			private Specimen[][] grabDistinctGrouped(int groups, int groupSize)
 			{
-				long maxRnd = specimens.Sum(s => s.fitness);
+				long maxRnd = 0L;
+				foreach (Specimen s in specimens)
+					maxRnd += s.fitness;
 				
 				Specimen[][] res = new GameLogic.Specimen[groups][];
 				
@@ -1208,6 +1288,35 @@ namespace ppcggacscontroller
 				
 				return res;
 			}
+			
+#if! nogdi
+			public void draw(System.Drawing.Graphics g, int scale)
+			{
+				if (b == null)
+					return;
+				
+				lock (drawLock)
+				{
+				
+					b.draw(g, scale);
+					
+					HashSet<Board.Position> pps = new HashSet<Board.Position>();
+					
+					foreach (Specimen s in specimens)
+					{
+						Board.Position p = s.pos;
+						if (pps.Contains(p))
+							continue;
+						pps.Add(p);
+						
+						System.Drawing.Brush brsh = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 0, 255 - (int)(255.0 / (1.0 + (double)s.fitness / 10.0)), 100));
+						
+						g.FillRectangle(brsh, p.x * scale + 2, p.y * scale + 2, scale - 4, scale - 4);
+					}
+					
+				}
+			}
+#endif
 		}
 		
 		// dies if max <= 0
