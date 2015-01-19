@@ -14,7 +14,24 @@ if your computer is set up to run python files directly.
 
 ### Adding your player
 
-Your player should be added to `player.py` as a subclass of `Player()`, and the final line of `player.py` should be changed to indicate the subclass name of the player to be used. There are a few simple example subclasses to give you the idea of how this works.
+Your player should be added to `player.py` as a subclass of `Player`, and the final line of `player.py` should be changed to indicate the subclass name of the player to be used.
+
+Your subclass should implement a method `turn()` which takes no parameters and returns a `Coordinate` with integer components in the range -1 to 1. The superclass `Player` provides some useful members for your convenience:
+
+    genome        A 100-bit integer representing the current specimen's genome.
+    bit_at()      Takes an integer i and gives you the bit at that position in
+                  the genome.
+    bit_range()   Takes two integers, start and stop, and gives you the integer
+                  represented by the bits from start to stop-1.
+    bit_chunk()   Takes two integers, start and length, and gives you the integer
+                  represented by the 'length' first bits from start.
+    vision        A 5x5 list of lists of integers representing colours. Each of
+                  the sublists is a row, so element x of row y is vision[y][x].
+                  The specimen itself is located at (2,2).
+    vision_at()   A convenience method, which takes x and y relative to the
+                  current specimen, i.e. in range [-2,2].
+                
+There are a few simple example subclasses to give you the idea of how this works.
 
 ### Python versions
 

@@ -5,21 +5,21 @@ import random
 class Player(object):
     def __init__(self):
         self.vision = None
-        self.dna = None
+        self.genome = None
 
-    def take_turn(self, dna, vision):
+    def take_turn(self, genome, vision):
         self.vision = vision
-        self.dna = dna
+        self.genome = genome
         return self.turn()
 
     def bit_at(self, position):
-        return (self.dna >> position) & 1
+        return (self.genome >> position) & 1
 
     def bit_range(self, start, stop):
-        return (self.dna >> start) & ((1 << (stop-start)) - 1)
+        return (self.genome >> start) & ((1 << (stop-start)) - 1)
 
     def bit_chunk(self, start, length):
-        return (self.dna >> start) & ((1 << length) - 1)
+        return (self.genome >> start) & ((1 << length) - 1)
 
     def turn(self):
         return Coordinate(1, 0)
