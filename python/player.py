@@ -1,7 +1,12 @@
 from coordinates import Coordinate
 import random
+import sys
 
 
+if sys.version_info >= (3,):
+    xrange = range
+
+    
 class Player(object):
     def __init__(self):
         self.vision = None
@@ -111,5 +116,5 @@ class IllegalPlayer(Player):
     def turn(self):
         return random.choice(self.coords)
         
-        
+
 PLAYER_TYPE = ColorScorePlayer
