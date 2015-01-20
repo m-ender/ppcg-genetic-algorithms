@@ -322,7 +322,8 @@ public:
             coord_t move = movefunc(bots[i].dna, view_t(this, bots[i].position));
             if(abs(move.x) > 1 || abs(move.y) > 1) {
                 move = {0, 0};
-                slog << "Player attempted illegal move\n";
+                slog << "\nPlayer attempted illegal move.\nAborting.";
+                exit(1);
             }
             coord_t newpos = bots[i].position + move;
             if(colortype(color(newpos.x,newpos.y)) == C_WALL)
@@ -409,8 +410,9 @@ view_t::view_t(board_t *b, coord_t p):
 
 color_t view_t::operator() (int x, int y) {
     if(abs(x) > VIEW_DIST || abs(y) > VIEW_DIST) {
-        slog << "Attempted to view square out of range\n";
-        return OUT_OF_BOUNDS;
+        slog << "\nAttempted to view square out of range.\nAborting\n.";
+        exit(1);
+        //return OUT_OF_BOUNDS;
     }
     return board.color(pos.x + x, pos.y + y);
 }
@@ -435,7 +437,7 @@ ull makeseed(int i) {
 #ifdef RANDOM_SEED
     return RANDOM_SEED;
 #else
-    return ((ull)i << 40) ^ std::chrono::high_resolution_clock().now().time_since_epoch().count();
+    return i ^ std::chrono::high_resolution_clock().now().time_since_epoch().count();
 #endif
 }
 double runsimulation(player_t player) {
