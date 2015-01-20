@@ -6,7 +6,7 @@
  */
 
 // testGenome means that we create TestGenomes, instead of ManGenomes, which run ManGenomes and BarrGenomes together to check the former works
-// #define testGenome
+//#define testGenome
 
 using System;
 using BitArr = System.Collections.BitArray;
@@ -87,10 +87,10 @@ namespace ppcggacscontroller
 		{
 			public static Color OutOfBounds = new Color(-1, ColorType.Trap);
 			
-			public int n {get; private set;}
-			public ColorType type {get; private set;}
-			public int tox {get; private set;} // target offsets
-			public int toy {get; private set;}
+			public int n {get; private set;} //pfcr?
+			public ColorType type {get; private set;} //pfcr?
+			public int tox {get; private set;} //pfcr? // target offsets
+			public int toy {get; private set;} //pfcr?
 			
 			public Color(int nN, ColorType typeN)
 			{
@@ -189,7 +189,7 @@ namespace ppcggacscontroller
 #if testGenome
 		private class TestGenome : IGenome
 		{
-			private IGenome g;
+			private ManGenome g;
 			
 			public TestGenome(GameConstants consts, Random rnd, IGenome a, IGenome b)
 			{
@@ -199,7 +199,7 @@ namespace ppcggacscontroller
 				Random mrnd = new Random(seed);
 				Random brnd = new Random(seed);
 				
-				ManGenome mg = new ManGenome(consts, mrnd, a, b);
+				ManGenome mg = new ManGenome(consts, mrnd, ((TestGenome)a).g, ((TestGenome)b).g);
 				BarrGenome bg = new BarrGenome(consts, brnd, a, b);
 				
 				for (int i = 0; i < mg.length; i++)
@@ -212,6 +212,11 @@ namespace ppcggacscontroller
 						if (bg.cutOutInt(i, j) != mg.cutOutInt(i, j))
 							throw new Exception("err " + i + " " + j);
 					}
+				}
+				
+				foreach (bool bbb in mg)
+				{
+					g = mg;
 				}
 				
 				g = mg;
@@ -269,44 +274,64 @@ namespace ppcggacscontroller
 			}
 			
 			// I hate this method
-			public ManGenome(GameConstants consts, Random rnd, IGenome a, IGenome b) : this(consts)
+			public ManGenome(GameConstants consts, Random rnd, ManGenome a, ManGenome b) : this(consts)
 			{
-				IGenome cur = a;
-				IGenome oth = b;
+				
+				ManGenome cur = a;
+				ManGenome oth = b;
+				uint curi = cur.ints[0];
+				uint othi = oth.ints[0];
 				
 				Action swap = () =>
 				{
 					var t = cur;
 					cur = oth;
 					oth = t;
+					
+					var ti = curi;
+					curi = othi;
+					othi = ti;
 				};
 				
 				if (rnd.NextDouble() < 0.5)
 					swap();
 				
-				int j = ints.Length;
+				int ii = 0;
+				int ij = 0;
+				uint ib = 1;
+				
 				uint c = 0;
 				
-				for (int i = glen - 1; i >= 0; i--)
+				for (int i = 0; i < glen; i++)
 				{
-					bool t = cur[i];
+					if (ib == 0)
+					{
+						ints[ii++] = c;
+						
+						c = 0;
+						
+						ij = 0;
+						ib = 1;
+						
+						curi = cur.ints[ii];
+						othi = oth.ints[ii];
+					}
+					
+					uint v = (curi & ib);
 					
 					if (rnd.NextDouble() < consts.genomeMutateRate)
-						t = !t;
+						v ^= ib;
 					
-					c = c << 1;
-					if (t)
-						c++;
-					
-					if (i % k == 0)
-					{
-						ints[--j] = c;
-						c = 0;
-					}
+					c |= v;
 					
 					if (rnd.NextDouble() < consts.genomeSwapRate)
 						swap();
+					
+					ij++;
+					ib = ib << 1;
 				}
+				
+				ints[ii] = c;
 			}
 			
 			public ManGenome(GameConstants consts, Random rnd) : this(consts)
@@ -383,9 +408,27 @@ namespace ppcggacscontroller
 			// TODO: make this faster
 			public IEnumerator<bool> GetEnumerator()
 			{
+				int ii = 0;
+				int ij = 0;
+				
+				uint c = ints[0];
+				
 				for (int i = 0; i < glen; i++)
 				{
-					yield return this[i];
+					bool r = (c & 1) == 1;
+#if testGenome
+					if (r != this[i])
+						throw new Exception("Grah!");
+#endif
+					yield return r;
+					c = c >> 1;
+					
+					ij++;
+					if (ij >= k)
+					{
+						ij = 0;
+						c = ints[++ii];
+					}
 				}
 			}
 		}
@@ -415,7 +458,7 @@ namespace ppcggacscontroller
 				if (rnd.NextDouble() < 0.5)
 					swap();
 				
-				for (int i = barr.Length - 1; i >= 0; i--)
+				for (int i = 0; i < barr.Length; i++)
 				{
 					bool t = cur[i];
 					
@@ -482,22 +525,34 @@ namespace ppcggacscontroller
 			public int score;
 			private int fitnessScoreCoef;
 			
-			public IGenome g {get; private set;}
+#if testGenome
+			public IGenome g {get; private set;} //pfcr?
+#else
+			public ManGenome g {get; private set;} //pfcr?
+#endif
 			
-			public long fitness {get; private set;}
+			public long fitness {get; private set;} //pfcr?
 			
 			public void computeFitness()
 			{
 				fitness = pos.x + 1 + fitnessScoreCoef * score;
 			}
 			
-			public Specimen(IGenome gN, GameConstants consts)
+#if testGenome
+			public Specimen(IGenome gN, GameConstants consts)		
+#else
+			public Specimen(ManGenome gN, GameConstants consts)		
+#endif
 			{
 				g = gN;
 				fitnessScoreCoef = consts.fitnessScoreCoef;
 			}
 			
+#if testGenome
 			public IGenome cross(GameConstants consts, Random rnd, Specimen other)
+#else
+			public ManGenome cross(GameConstants consts, Random rnd, Specimen other)
+#endif
 			{
 #if testGenome
 				return new TestGenome(consts, rnd, g, other.g);
@@ -525,17 +580,17 @@ namespace ppcggacscontroller
 			private class Cell
 			{
 				// location of this Cell
-				public Position truePos {get; private set;}
+				public Position truePos {get; private set;} //pfcr?
 				// where a Specimen moving onto this Cell should be moved to
-				public Position movePos {get; private set;}
+				public Position movePos {get; private set;} //pfcr?
 				// whether a Specimen is not allowed to move to this Cell
-				public bool wall {get; private set;}
+				public bool wall {get; private set;} //pfcr?
 				// whether a Specimen that ends up on this Cell is a dead Specimen
-				public bool lethal {get; private set;}
+				public bool lethal {get; private set;} //pfcr?
 				// the Color of the Cell
-				public Color trueColor {get; private set;}
+				public Color trueColor {get; private set;} //pfcr?
 				
-				public View view {get; private set;}
+				public View view {get; private set;} //pfcr?
 				
 				public Cell(Position truePosN, Color trueColorN)
 				{
@@ -591,24 +646,10 @@ namespace ppcggacscontroller
 				}
 			}
 			
-			/*public struct Position
-			{
-//				public int x {get; private set;}
-//				public int y {get; private set;}
-				public int x;
-				public int y;
-				
-				public Position(int xN, int yN)// : this()
-				{
-					x = xN;
-					y = yN;
-				}
-			}*/
-			
 			public class Position
 			{
-				public int x {get; private set;}
-				public int y {get; private set;}
+				public int x {get; private set;} //pfcr?
+				public int y {get; private set;} //pfcr?
 				
 				public Position(int xN, int yN)
 				{
@@ -653,8 +694,8 @@ namespace ppcggacscontroller
 				#endregion
 			}
 			
-			public int width {get; private set;}
-			public int height {get; private set;}
+			public int width {get; private set;} //pfcr?
+			public int height {get; private set;} //pfcr?
 			
 			private Cell[,] grid; // tidy rather than fast
 			private Color[] colorTable; // Color.n -> ColourType
@@ -878,7 +919,7 @@ namespace ppcggacscontroller
 			// evaluate a move onto this position
 			public SpecimenState move(Position ipos, int ox, int oy, out Position rpos)
 			{
-				if (Math.Abs(ox) > 1 || Math.Abs(oy) > 1)
+				if (ox > 1 || ox < -1 || oy > 1 || oy < -1)
 				{
 					throw new Exception("Invalid move");
 				}
@@ -1053,7 +1094,11 @@ namespace ppcggacscontroller
 				specimens = new List<Specimen>();
 			}
 			
+#if testGenome
 			private void addSpecimen(IGenome g)
+#else
+			private void addSpecimen(ManGenome g)
+#endif
 			{
 				Specimen s = new Specimen(g, consts);
 				resetSpecimen(s);
@@ -1257,55 +1302,61 @@ namespace ppcggacscontroller
 			{
 				if (specimens.Count >= 2)
 				{
-					Specimen[][] breeders = grabDistinctGrouped(consts.reproductionRate, 2, fitnessSum);
-					
-					foreach (Specimen[] breedingPair in breeders)
-						addSpecimen(breedingPair[0].cross(consts, rnd, breedingPair[1]));
-				}
-			}
-			
-			private Specimen[][] grabDistinctGrouped(int groups, int groupSize, long fitnessSum)
-			{
-				Specimen[][] res = new GameLogic.Specimen[groups][];
-				
-				for (int i = 0; i < groups; i++)
-				{
-					res[i] = grabDistinctIndividuals(groupSize, fitnessSum);
-				}
-				
-				return res;
-			}
-			
-			private Specimen[] grabDistinctIndividuals(int count, long maxRnd)
-			{
-				if (specimens.Count < count)
-					return null;
-				
-				Specimen[] res = new Specimen[count];
-								
-				while (count > 0)
-				{
-					long idx = rndLong(rnd, maxRnd);
-					
-					for (int i = 0; i < specimens.Count; i++)
+					for (int i = 0; i < consts.reproductionRate; i++)
 					{
-						Specimen s = specimens[i];
-						long f = s.fitness;
-						
-						if (idx < f)
-						{
-							if (Array.IndexOf(res, s) != -1)
-								break; // go again
-							
-							res[--count] = s;
-							break;
-						}
-						
-						idx -= f;
+						Specimen a, b;
+						grabDistinctPair(fitnessSum, out a, out b);
+						addSpecimen(a.cross(consts, rnd, b));
 					}
 				}
+			}
+			
+			private void grabDistinctPair(long maxRnd, out Specimen a, out Specimen b)
+			{
+				a = b = null;
 				
-				return res;
+				long ai = rndLong(rnd, maxRnd);
+				long bi = rndLong(rnd, maxRnd);
+				if (ai > bi)
+				{
+					long t = ai;
+					ai = bi;
+					bi = t;
+				}
+				
+				bi = bi - ai;
+				
+			again:
+				for (int i = 0; i < specimens.Count; i++)
+				{
+					Specimen s = specimens[i];
+					long f = s.fitness;
+					
+					if (ai < f)
+					{
+						if (bi < 0)
+						{
+							if (a == s)
+								goto nope;
+							
+							b = s;
+							return;
+						}
+						
+						a = s;
+						ai += bi;
+						bi = -1;
+						
+						if (ai < f)
+							goto nope;
+					}
+					
+					ai -= f;
+				}
+				
+			nope:
+				ai = rndLong(rnd, maxRnd);
+				goto again;
 			}
 			
 #if! nogdi

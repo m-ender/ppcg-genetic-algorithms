@@ -23,7 +23,7 @@ namespace ppcggacscontroller
 		}
 		
 		private GameLogic.Game g;
-		public bool gone {get; private set;}
+		public bool gone; /* {get; private set;} //pfcr? performance!!*/
 		private int tickCount = 0;
 		private int scale = 12;
 		
