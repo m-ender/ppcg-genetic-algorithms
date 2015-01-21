@@ -12,6 +12,9 @@ Your player should be added to `player.rb` as a subclass of `Player`, and the fi
 
 Your subclass should implement a method `turn` which takes no parameters and returns a `Vector2D` with integer components in the range `-1` to `1`. The superclass `Player` provides a couple of useful members for your convenience:
 
+    @rng        A seeded random number generator. This is the only source of
+                randomness you may use.
+
     @genome     A 100-bit integer representing the current specimen's genome.
     bit_at      Takes an integer i and gives you the bit at that position in
                 the genome.

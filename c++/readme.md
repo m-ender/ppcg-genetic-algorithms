@@ -1,9 +1,9 @@
 #Using the C++ Controller
 
 ##Interfacing with the controller
-Your function should have a signature of the type of `coord_t f(dna_t d, view_t v)`. Bits in the genome can be accessed by array index notation `d[0]` ... `d[99]`. The colors of a square in the bot's neighborhood at the relative position (dx, dy) can be accessed by `v(dx, dy)`. The return type, `coord_t`, is a struct with two `int` members `x` and `y`. For example `return {1, -1};`. If a bot tries to examine the color of or move to a location beyond the acceptable range, a warning message will be printed, but execution will continue. 
+Your function should have a signature of the type of `coord_t f(dna_t d, view_t v)`. Bits in the genome can be accessed by array index notation `d[0]` ... `d[99]`. The colors of a square in the bot's neighborhood at the relative position (dx, dy) can be accessed by `v(dx, dy)`. The return type, `coord_t`, is a struct with two `int` members `x` and `y`. For example `return {1, -1};`. If a bot tries to examine the color of or move to a location beyond the acceptable range, <strike>a warning message will be printed, but execution will continue</strike>it will choke and die. 
 
-Your function should not save any state between calls, except perhaps effects on a random number generator. The random seed used to generate each board is printed out, which should make it possible to exactly reproduce runs, if you use the same generator (see under Multithreading).
+Your function should not save any state between calls, except perhaps effects on a random number generator. The random seed used to generate each board is printed out, which should make it possible to exactly reproduce runs, if you use the same generator (see under Multithreading). `#define`ing `RANDOM_SEED` to some value will cause every game to be set up identically, and allows a specific game to be reproduced.
 
 ##Examples
 A few example players which should demonstrate how to use the provided functionality are located in `main.cpp`.

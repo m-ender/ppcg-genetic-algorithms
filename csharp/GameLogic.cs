@@ -1,20 +1,17 @@
 ﻿/**
  * Loosley based off this: https://github.com/mbuettner/ppcg-genetic-algorithms/tree/master/c%2B%2B
- * Should conform to the Spec as of 2015-01-19 16:00 UTC: http://meta.codegolf.stackexchange.com/questions/2140/sandbox-for-proposed-challenges/4656#4656
+ * Should conform to the Spec as of 2015-01-19 23:00 UTC: http://codegolf.stackexchange.com/questions/44707/lab-rat-race-an-exercise-in-genetic-algorithms
  * 
  * If it breaks, shout at VisualMelon
  */
 
 // testGenome means that we create TestGenomes, instead of ManGenomes, which run ManGenomes and BarrGenomes together to check the former works
-// #define testGenome
+//#define testGenome
 
 using System;
 using BitArr = System.Collections.BitArray;
 using System.Collections.Generic;
 using System.Linq;
-
-// for brutal (and necessary) testing of the ManGenome testing
-//using Genome = ppcggacscontroller.GameLogic.TestGenome;
 
 // sorry about the naming, never written code for someone else to use before
 
@@ -58,6 +55,16 @@ namespace ppcggacscontroller
 			// views
 			public int viewDimX = 2;
 			public int viewDimY = 2;
+			
+#if! nogdi
+			// display
+			public System.Drawing.Brush emptyBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 255, 255, 255));
+			public System.Drawing.Brush specimenBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 0, 0, 0));
+			public System.Drawing.Brush deathBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 255, 128, 128));
+			public System.Drawing.Brush teleBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 128, 128, 255));
+			public System.Drawing.Brush wallBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 128, 128, 128));
+			public System.Drawing.Brush goalBrush = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 64, 128, 64));
+#endif
 		}
 		
 		private enum SpecimenState
@@ -80,10 +87,10 @@ namespace ppcggacscontroller
 		{
 			public static Color OutOfBounds = new Color(-1, ColorType.Trap);
 			
-			public int n {get; private set;}
-			public ColorType type {get; private set;}
-			public int tox {get; private set;} // target offsets
-			public int toy {get; private set;}
+			public int n {get; private set;} //pfcr?
+			public ColorType type {get; private set;} //pfcr?
+			public int tox {get; private set;} //pfcr? // target offsets
+			public int toy {get; private set;} //pfcr?
 			
 			public Color(int nN, ColorType typeN)
 			{
@@ -139,13 +146,13 @@ namespace ppcggacscontroller
 				colors = (int[,])org.colors.Clone();
 			}
 			
-			public void see(Board.Position pos)
+			public void see(Board.Position pos, Board brd)
 			{
 				for (int i = -xd; i <= xd; i++)
 				{
 					for (int j = -yd; j <= yd; j++)
 					{
-						colors[i + xd, j + yd] = pos.brd.getColor(i + pos.x, j + pos.y).n;
+						colors[i + xd, j + yd] = brd.getColor(i + pos.x, j + pos.y).n;
 					}
 				}
 			}
@@ -182,7 +189,7 @@ namespace ppcggacscontroller
 #if testGenome
 		private class TestGenome : IGenome
 		{
-			private IGenome g;
+			private ManGenome g;
 			
 			public TestGenome(GameConstants consts, Random rnd, IGenome a, IGenome b)
 			{
@@ -192,7 +199,7 @@ namespace ppcggacscontroller
 				Random mrnd = new Random(seed);
 				Random brnd = new Random(seed);
 				
-				ManGenome mg = new ManGenome(consts, mrnd, a, b);
+				ManGenome mg = new ManGenome(consts, mrnd, ((TestGenome)a).g, ((TestGenome)b).g);
 				BarrGenome bg = new BarrGenome(consts, brnd, a, b);
 				
 				for (int i = 0; i < mg.length; i++)
@@ -205,6 +212,11 @@ namespace ppcggacscontroller
 						if (bg.cutOutInt(i, j) != mg.cutOutInt(i, j))
 							throw new Exception("err " + i + " " + j);
 					}
+				}
+				
+				foreach (bool bbb in mg)
+				{
+					g = mg;
 				}
 				
 				g = mg;
@@ -241,7 +253,6 @@ namespace ppcggacscontroller
 				return GetEnumerator();
 			}
 			
-			// TODO: make this faster
 			public IEnumerator<bool> GetEnumerator()
 			{
 				return g.GetEnumerator();
@@ -263,44 +274,64 @@ namespace ppcggacscontroller
 			}
 			
 			// I hate this method
-			public ManGenome(GameConstants consts, Random rnd, IGenome a, IGenome b) : this(consts)
+			public ManGenome(GameConstants consts, Random rnd, ManGenome a, ManGenome b) : this(consts)
 			{
-				IGenome cur = a;
-				IGenome oth = b;
+				
+				ManGenome cur = a;
+				ManGenome oth = b;
+				uint curi = cur.ints[0];
+				uint othi = oth.ints[0];
 				
 				Action swap = () =>
 				{
 					var t = cur;
 					cur = oth;
 					oth = t;
+					
+					var ti = curi;
+					curi = othi;
+					othi = ti;
 				};
 				
 				if (rnd.NextDouble() < 0.5)
 					swap();
 				
-				int j = ints.Length;
+				int ii = 0;
+				int ij = 0;
+				uint ib = 1;
+				
 				uint c = 0;
 				
-				for (int i = glen - 1; i >= 0; i--)
+				for (int i = 0; i < glen; i++)
 				{
-					bool t = cur[i];
+					if (ib == 0)
+					{
+						ints[ii++] = c;
+						
+						c = 0;
+						
+						ij = 0;
+						ib = 1;
+						
+						curi = cur.ints[ii];
+						othi = oth.ints[ii];
+					}
+					
+					uint v = (curi & ib);
 					
 					if (rnd.NextDouble() < consts.genomeMutateRate)
-						t = !t;
+						v ^= ib;
 					
-					c = c << 1;
-					if (t)
-						c++;
-					
-					if (i % k == 0)
-					{
-						ints[--j] = c;
-						c = 0;
-					}
+					c |= v;
 					
 					if (rnd.NextDouble() < consts.genomeSwapRate)
 						swap();
+					
+					ij++;
+					ib = ib << 1;
 				}
+				
+				ints[ii] = c;
 			}
 			
 			public ManGenome(GameConstants consts, Random rnd) : this(consts)
@@ -377,9 +408,27 @@ namespace ppcggacscontroller
 			// TODO: make this faster
 			public IEnumerator<bool> GetEnumerator()
 			{
+				int ii = 0;
+				int ij = 0;
+				
+				uint c = ints[0];
+				
 				for (int i = 0; i < glen; i++)
 				{
-					yield return this[i];
+					bool r = (c & 1) == 1;
+#if testGenome
+					if (r != this[i])
+						throw new Exception("Grah!");
+#endif
+					yield return r;
+					c = c >> 1;
+					
+					ij++;
+					if (ij >= k)
+					{
+						ij = 0;
+						c = ints[++ii];
+					}
 				}
 			}
 		}
@@ -409,7 +458,7 @@ namespace ppcggacscontroller
 				if (rnd.NextDouble() < 0.5)
 					swap();
 				
-				for (int i = barr.Length - 1; i >= 0; i--)
+				for (int i = 0; i < barr.Length; i++)
 				{
 					bool t = cur[i];
 					
@@ -476,23 +525,34 @@ namespace ppcggacscontroller
 			public int score;
 			private int fitnessScoreCoef;
 			
-			public IGenome g {get; private set;}
+#if testGenome
+			public IGenome g {get; private set;} //pfcr?
+#else
+			public ManGenome g {get; private set;} //pfcr?
+#endif
 			
-			public long fitness
+			public long fitness {get; private set;} //pfcr?
+			
+			public void computeFitness()
 			{
-				get
-				{ // positions are 0-indexed internally
-					return pos.x + 1 + fitnessScoreCoef * score;
-				}
+				fitness = pos.x + 1 + fitnessScoreCoef * score;
 			}
 			
-			public Specimen(IGenome gN, GameConstants consts)
+#if testGenome
+			public Specimen(IGenome gN, GameConstants consts)		
+#else
+			public Specimen(ManGenome gN, GameConstants consts)		
+#endif
 			{
 				g = gN;
 				fitnessScoreCoef = consts.fitnessScoreCoef;
 			}
 			
+#if testGenome
 			public IGenome cross(GameConstants consts, Random rnd, Specimen other)
+#else
+			public ManGenome cross(GameConstants consts, Random rnd, Specimen other)
+#endif
 			{
 #if testGenome
 				return new TestGenome(consts, rnd, g, other.g);
@@ -502,7 +562,7 @@ namespace ppcggacscontroller
 			}
 		}
 		
-		public delegate void PlayerDel(IView v, IGenome g, out int ox, out int oy);
+		public delegate void PlayerDel(IView v, IGenome g, Random r, out int ox, out int oy);
 		
 		private class Player
 		{
@@ -520,15 +580,17 @@ namespace ppcggacscontroller
 			private class Cell
 			{
 				// location of this Cell
-				public Position truePos {get; private set;}
+				public Position truePos {get; private set;} //pfcr?
 				// where a Specimen moving onto this Cell should be moved to
-				public Position movePos {get; private set;}
+				public Position movePos {get; private set;} //pfcr?
+				// whether a Specimen is not allowed to move to this Cell
+				public bool wall {get; private set;} //pfcr?
 				// whether a Specimen that ends up on this Cell is a dead Specimen
-				public bool lethal {get; private set;}
+				public bool lethal {get; private set;} //pfcr?
 				// the Color of the Cell
-				public Color trueColor {get; private set;}
+				public Color trueColor {get; private set;} //pfcr?
 				
-				public View view {get; private set;}
+				public View view {get; private set;} //pfcr?
 				
 				public Cell(Position truePosN, Color trueColorN)
 				{
@@ -536,13 +598,14 @@ namespace ppcggacscontroller
 					movePos = truePos; // default
 					trueColor = trueColorN;
 					
+					wall = false;
 					lethal = false;
 				}
 				
-				public void createView(GameConstants consts)
+				public void createView(GameConstants consts, Board brd)
 				{
 					view = new View(consts);
-					view.see(truePos);
+					view.see(truePos, brd);
 				}
 				
 				public void apply(Color c)
@@ -556,18 +619,18 @@ namespace ppcggacscontroller
 							lethal = true;
 							break;
 						case ColorType.Wall:
-							movePos = null;
+							wall = true;
 							lethal = true;
 							break;
 						case ColorType.Tele:
-							movePos = new Position(movePos.brd, movePos.x + c.tox, movePos.y + c.toy);
+							movePos = new Position(movePos.x + c.tox, movePos.y + c.toy);
 							break;
 					}
 				}
 				
 				public Position moveFrom(Position ipos)
 				{
-					if (movePos == null) // we are a wall, or the like
+					if (wall) // we are a wall, or the like
 						return ipos;
 					else
 						return movePos;
@@ -583,29 +646,15 @@ namespace ppcggacscontroller
 				}
 			}
 			
-			// this isn't wierd atall
 			public class Position
 			{
-				public Board brd {get; private set;}
-				public int x {get; private set;}
-				public int y {get; private set;}
+				public int x {get; private set;} //pfcr?
+				public int y {get; private set;} //pfcr?
 				
-				public Position(Board brdN, int xN, int yN)
+				public Position(int xN, int yN)
 				{
-					brd = brdN;
 					x = xN;
 					y = yN;
-				}
-				
-				public Color getColor()
-				{
-					return brd.getColor(x, y);
-				}
-				
-				// move from this position to somewhere else
-				public SpecimenState move(int ox, int oy, out Position rpos)
-				{
-					return brd.move(this, ox, oy, out rpos);
 				}
 				
 				#region Equals and GetHashCode implementation
@@ -616,17 +665,15 @@ namespace ppcggacscontroller
 					GameLogic.Board.Position other = obj as GameLogic.Board.Position;
 					if (other == null)
 						return false;
-					return object.Equals(this.brd, other.brd) && this.x == other.x && this.y == other.y;
+					return this.x == other.x && this.y == other.y;
 				}
 				
 				public override int GetHashCode()
 				{
 					int hashCode = 0;
 					unchecked {
-						if (brd != null)
-							hashCode += 1000000007 * brd.GetHashCode();
-						hashCode += 1000000009 * x.GetHashCode();
-						hashCode += 1000000021 * y.GetHashCode();
+						hashCode += 1000000007 * x.GetHashCode();
+						hashCode += 1000000009 * y.GetHashCode();
 					}
 					return hashCode;
 				}
@@ -647,8 +694,8 @@ namespace ppcggacscontroller
 				#endregion
 			}
 			
-			public int width {get; private set;}
-			public int height {get; private set;}
+			public int width {get; private set;} //pfcr?
+			public int height {get; private set;} //pfcr?
 			
 			private Cell[,] grid; // tidy rather than fast
 			private Color[] colorTable; // Color.n -> ColourType
@@ -739,7 +786,7 @@ namespace ppcggacscontroller
 							rndc = rndColor();
 						}
 						
-						grid[i, j] = new Cell(new Position(this, i, j), rndColor());
+						grid[i, j] = new Cell(new Position(i, j), rndc);
 					}
 				}
 				
@@ -764,7 +811,7 @@ namespace ppcggacscontroller
 				
 				foreach (Cell cl in grid)
 				{
-					cl.createView(consts);
+					cl.createView(consts, this);
 				}
 				
 				// verify
@@ -781,7 +828,7 @@ namespace ppcggacscontroller
 				
 				for (int j = 0; j < height; j++)
 				{
-					if (admissibleStartingCellCheck(new Position(this, 0, j)))
+					if (admissibleStartingCellCheck(new Position(0, j)))
 					{
 						startCellYlist.Add(j);
 					}
@@ -819,7 +866,7 @@ namespace ppcggacscontroller
 							for (int j = -1; j <= 1; j++)
 							{
 								Position np;
-								SpecimenState ss = next.move(i, j, out np);
+								SpecimenState ss = this.move(next, i, j, out np);
 								
 								if (ss == SpecimenState.Win)
 								{
@@ -853,7 +900,7 @@ namespace ppcggacscontroller
 			public Position rndStartCell()
 			{
 				int y = startCellYs[rnd.Next(startCellYs.Length)];
-				return new Position(this, 0, y);
+				return new Position(0, y);
 			}
 			
 			public int numStartCells
@@ -872,7 +919,7 @@ namespace ppcggacscontroller
 			// evaluate a move onto this position
 			public SpecimenState move(Position ipos, int ox, int oy, out Position rpos)
 			{
-				if (Math.Abs(ox) > 1 || Math.Abs(oy) > 1)
+				if (ox > 1 || ox < -1 || oy > 1 || oy < -1)
 				{
 					throw new Exception("Invalid move");
 				}
@@ -883,7 +930,7 @@ namespace ppcggacscontroller
 				SpecimenState premss = boundsCheck(x, y);
 				if (premss == SpecimenState.Dead)
 				{
-					rpos = new Position(this, x, y);
+					rpos = new Position(x, y);
 					return SpecimenState.Dead;
 				}
 				
@@ -919,7 +966,7 @@ namespace ppcggacscontroller
 			
 			public Position position(int x, int y)
 			{
-				return new Position(this, x, y);
+				return new Position(x, y);
 			}
 			
 			public Color getColor(int x, int y)
@@ -938,12 +985,12 @@ namespace ppcggacscontroller
 					{
 						Cell c = grid[i, j];
 						
-						if (c.movePos == c.truePos)
-							writer.Write(" ");
-						else if (c.movePos == null)
+						if (c.wall)
 							writer.Write("W");
-						else
+						else if (c.trueColor.type == ColorType.Tele)
 							writer.Write("T");
+						else
+							writer.Write(" ");
 						
 						if (c.lethal)
 							writer.Write("!");
@@ -954,10 +1001,84 @@ namespace ppcggacscontroller
 					writer.WriteLine();
 				}
 			}
+			
+#if! nogdi
+			private Cell[,] bgGrid = null;
+			private int bgScale = -1;
+			private bool bgDrawTeleArrows = false;
+			private System.Drawing.Bitmap bgBmp;
+			
+			private void drawBG(int scale, bool drawTeleArrows)
+			{
+				int w = scale * width;
+				int h = scale * height;
+				
+				if (bgBmp != null)
+					bgBmp.Dispose();
+				
+				bgGrid = grid;
+				bgScale = scale;
+				bgDrawTeleArrows = drawTeleArrows;
+				
+				bgBmp = new System.Drawing.Bitmap(w, h);
+				
+				System.Drawing.Graphics g = System.Drawing.Graphics.FromImage(bgBmp);
+				
+				for (int i = 0; i < width; i++)
+				{
+					for (int j = 0; j < height; j++)
+					{
+						System.Drawing.Brush brsh = consts.emptyBrush;
+						
+						if (boundsCheck(i, j) == SpecimenState.Win)
+							brsh = consts.goalBrush;
+						
+						Cell cl = grid[i, j];
+						
+						if (cl.trueColor.type == ColorType.Wall)
+							brsh = consts.wallBrush;
+						else if (cl.trueColor.type == ColorType.Tele)
+							brsh = consts.teleBrush;
+						else if (cl.lethal)
+							brsh = consts.deathBrush;
+						
+						g.FillRectangle(brsh, i * scale, j * scale, scale, scale);
+					}
+				}
+				
+				if (drawTeleArrows)
+				{
+					System.Drawing.Pen telePen = new System.Drawing.Pen(System.Drawing.Color.DarkGray, 1);
+					telePen.StartCap = System.Drawing.Drawing2D.LineCap.NoAnchor;
+					telePen.EndCap = System.Drawing.Drawing2D.LineCap.ArrowAnchor;
+					
+					foreach (Cell cl in grid)
+					{
+						if (cl.trueColor.type == ColorType.Tele)
+						{
+							g.DrawLine(telePen, cl.truePos.x * scale + scale / 2, cl.truePos.y * scale + scale / 2, cl.movePos.x * scale + scale / 2, cl.movePos.y * scale + scale / 2);
+						}
+					}
+				}
+			}
+			
+			public void draw(System.Drawing.Graphics g, int scale, bool drawTeleArrows)
+			{
+				if (grid != bgGrid || scale != bgScale || drawTeleArrows != bgDrawTeleArrows || bgBmp == null)
+				{
+					drawBG(scale, drawTeleArrows);
+				}
+				
+				g.DrawImage(bgBmp, 0, 0);
+			}
+#endif
 		}
 		
 		public class Game
 		{
+			private Object drawLock = new Object();
+			public IDisplay displayer {get; set;}
+			
 			private Board b;
 			
 			private Player plyr;
@@ -973,10 +1094,15 @@ namespace ppcggacscontroller
 				specimens = new List<Specimen>();
 			}
 			
+#if testGenome
 			private void addSpecimen(IGenome g)
+#else
+			private void addSpecimen(ManGenome g)
+#endif
 			{
 				Specimen s = new Specimen(g, consts);
 				resetSpecimen(s);
+				s.computeFitness();
 				specimens.Add(s);
 			}
 			
@@ -991,7 +1117,7 @@ namespace ppcggacscontroller
 			{
 				List<int> scores = new List<int>();
 				
-				for (int i = 0; i < consts.repeatCount; i++)
+				for (int i = 0; i++ < consts.repeatCount;)
 				{
 					Console.WriteLine("Running game {0}", i);
 					
@@ -1013,31 +1139,41 @@ namespace ppcggacscontroller
 			
 			private static double geoMean(IEnumerable<double> values)
 			{
-				double pac = 1;
-
-				foreach (double v in values)
-					pac += Math.Log(v);
+				double pac = 0;
+				int n = 0;
 				
-				return Math.Exp(pac);
+				foreach (double v in values)
+				{
+					pac += Math.Log(v);
+					n++;
+				}
+				
+				return Math.Exp(pac / (double)n);
 			}
 			
 			private void runGame()
 			{
 				// init
-				b = new Board(consts, rnd);
 				
-				Console.WriteLine(b.numStartCells + " start cells");
-				
-				plyr.score = 1;
-				specimens.Clear();
-				
-				for (int i = 0; i < consts.initialSpecimenCount; i++)
+				lock (drawLock)
 				{
-#if testGenome
-					addSpecimen(new TestGenome(consts, rnd));
-#else
-					addSpecimen(new ManGenome(consts, rnd));
-#endif
+					
+					b = new Board(consts, rnd);
+					
+					Console.WriteLine(b.numStartCells + " start cells");
+					
+					plyr.score = 1;
+					specimens.Clear();
+					
+					for (int i = 0; i < consts.initialSpecimenCount; i++)
+					{
+	#if testGenome
+						addSpecimen(new TestGenome(consts, rnd));
+	#else
+						addSpecimen(new ManGenome(consts, rnd));
+	#endif
+					}
+				
 				}
 				
 				// run
@@ -1084,28 +1220,38 @@ namespace ppcggacscontroller
 					
 					spc += specimens.Count;
 					
-					move();
-					
-					if (specimens.Count > 0)
+					lock (drawLock)
 					{
-						// update bestFitness
-						long tbf = specimens.Max(s => s.fitness);
-						if (tbf > bestFitness)
-							bestFitness = tbf;
+						
+						move();
+						
+						long fitnessSum = 0L;
+						foreach (Specimen s in specimens)
+						{
+							s.computeFitness();
+							
+							if (s.fitness > bestFitness)
+								bestFitness = s.fitness;
+							fitnessSum += s.fitness;
+						}
+						
+						if (--diagTicker == 0)
+						{
+							printDiags();
+							diagTicker = diagInterval;
+						}
+						
+						// breed
+						if (--breedTicker == 0)
+						{
+							breed(fitnessSum);
+							breedTicker = consts.turnsPerBreeding;
+						}
+						
 					}
 					
-					if (--diagTicker == 0)
-					{
-						printDiags();
-						diagTicker = diagInterval;
-					}
-					
-					// breed
-					if (--breedTicker == 0)
-					{
-						breed();
-						breedTicker = consts.turnsPerBreeding;
-					}
+					if (displayer != null)
+						displayer.tick();
 				}
 				
 				sw.Stop();
@@ -1133,10 +1279,10 @@ namespace ppcggacscontroller
 					
 					int ox, oy;
 					
-					plyr.pd.Invoke(b.getView(s.pos.x, s.pos.y), s.g, out ox, out oy);
+					plyr.pd.Invoke(b.getView(s.pos.x, s.pos.y), s.g, rnd, out ox, out oy);
 					
 					Board.Position npos;
-					SpecimenState sstate = s.pos.move(ox, oy, out npos);
+					SpecimenState sstate = b.move(s.pos, ox, oy, out npos);
 					s.pos = npos;
 					
 					if (sstate == SpecimenState.Win)
@@ -1152,62 +1298,98 @@ namespace ppcggacscontroller
 				}
 			}
 			
-			private void breed()
+			private void breed(long fitnessSum)
 			{
 				if (specimens.Count >= 2)
 				{
-					Specimen[][] breeders = grabDistinctGrouped(consts.reproductionRate, 2);
-					
-					foreach (Specimen[] breedingPair in breeders)
-						addSpecimen(breedingPair[0].cross(consts, rnd, breedingPair[1]));
-				}
-			}
-			
-			private Specimen[][] grabDistinctGrouped(int groups, int groupSize)
-			{
-				long maxRnd = specimens.Sum(s => s.fitness);
-				
-				Specimen[][] res = new GameLogic.Specimen[groups][];
-				
-				for (int i = 0; i < groups; i++)
-				{
-					res[i] = grabDistinctIndividuals(groupSize, maxRnd);
-				}
-				
-				return res;
-			}
-			
-			private Specimen[] grabDistinctIndividuals(int count, long maxRnd)
-			{
-				if (specimens.Count < count)
-					return null;
-				
-				Specimen[] res = new Specimen[count];
-								
-				while (count > 0)
-				{
-					long idx = rndLong(rnd, maxRnd);
-					
-					for (int i = 0; i < specimens.Count; i++)
+					for (int i = 0; i < consts.reproductionRate; i++)
 					{
-						Specimen s = specimens[i];
-						long f = s.fitness;
-						
-						if (idx < f)
-						{
-							if (Array.IndexOf(res, s) != -1)
-								break; // go again
-							
-							res[--count] = s;
-							break;
-						}
-						
-						idx -= f;
+						Specimen a, b;
+						grabDistinctPair(fitnessSum, out a, out b);
+						addSpecimen(a.cross(consts, rnd, b));
 					}
 				}
-				
-				return res;
 			}
+			
+			private void grabDistinctPair(long maxRnd, out Specimen a, out Specimen b)
+			{
+				a = b = null;
+				
+				long ai = rndLong(rnd, maxRnd);
+				long bi = rndLong(rnd, maxRnd);
+				if (ai > bi)
+				{
+					long t = ai;
+					ai = bi;
+					bi = t;
+				}
+				
+				bi = bi - ai;
+				
+			again:
+				for (int i = 0; i < specimens.Count; i++)
+				{
+					Specimen s = specimens[i];
+					long f = s.fitness;
+					
+					if (ai < f)
+					{
+						if (bi < 0)
+						{
+							if (a == s)
+								goto nope;
+							
+							b = s;
+							return;
+						}
+						
+						a = s;
+						ai += bi;
+						bi = -1;
+						
+						if (ai < f)
+							goto nope;
+					}
+					
+					ai -= f;
+				}
+				
+			nope:
+				ai = rndLong(rnd, maxRnd);
+				goto again;
+			}
+			
+#if! nogdi
+			public void draw(System.Drawing.Graphics g, int scale, bool drawTeleArrows)
+			{
+				if (b == null)
+					return;
+				
+				lock (drawLock)
+				{
+				
+					b.draw(g, scale, drawTeleArrows);
+					
+					HashSet<Board.Position> pps = new HashSet<Board.Position>();
+					
+					foreach (Specimen s in specimens)
+					{
+						Board.Position p = s.pos;
+						if (pps.Contains(p))
+							continue;
+						pps.Add(p);
+						
+						System.Drawing.Brush brsh = consts.specimenBrush;
+						
+						// too much fun
+						//brsh = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(255, 0, 255 - (int)(255.0 / (1.0 + (double)s.fitness / 50.0)), 100));
+						
+						g.FillRectangle(brsh, p.x * scale + 1, p.y * scale + 1, scale - 2, scale - 2);
+					}
+					
+				}
+			}
+#endif
 		}
 		
 		// dies if max <= 0
