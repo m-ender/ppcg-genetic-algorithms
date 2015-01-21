@@ -59,12 +59,12 @@ public class Game {
         if (NUMBER_OF_BOARDS > 1){
             System.out.println("=========================================");
             System.out.print("Individual scores: ");
-            int sum = 0;
+            double total = 0;
             for (int score: gameRecords){
                 System.out.print(score+", ");
-                sum += score;
+                total += Math.log(score);
             }
-            System.out.println("On average, your bot got "+sum*1.0/NUMBER_OF_BOARDS+" points");
+            System.out.println("Your final score is "+Math.exp(total/gameRecords.size()));
         }
 
     }
