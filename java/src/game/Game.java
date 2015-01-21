@@ -3,8 +3,6 @@ package game;
 import game.display.Display;
 import game.players.Player;
 
-import javax.swing.text.BadLocationException;
-
 import static game.Constants.*;
 
 import java.util.*;
@@ -18,9 +16,9 @@ public class Game {
     }
     public static void run(){
         Player player = Player.currentPlayer;
-        int totalPoints = 0;
         List<Integer> gameRecords = new ArrayList<Integer>(NUMBER_OF_BOARDS);
         for (int boardNumber = 0; boardNumber < NUMBER_OF_BOARDS; boardNumber++){
+            int totalPoints = 1;
             System.out.println("Running board #"+(boardNumber+1)+"/"+NUMBER_OF_BOARDS);
             Board board = new Board();
             long startTime = System.nanoTime();
@@ -30,6 +28,7 @@ public class Game {
                 if (!lifeExists(board))
                     break;
                 breed(board, turnNumber, REPRODUCTION_RATE);
+                board.updateSpecimen();
                 display.repaint();
                 if (turnNumber % (NUMBER_OF_TURNS/100) == 0){
                     int population = 0;
@@ -64,7 +63,7 @@ public class Game {
                 System.out.print(score+", ");
                 total += Math.log(score);
             }
-            System.out.println("Your final score is "+Math.exp(total/gameRecords.size()));
+            System.out.println("\nYour final score is "+Math.exp(total / gameRecords.size()));
         }
 
     }
@@ -79,6 +78,7 @@ public class Game {
                     board.addSpecimen(specimen, newLocation);
                     points += 1;
                 }
+                continue;
             }
             for (Specimen specimen: board.getSpecimen(location)){
                 if (turnNumber == specimen.birthTurn + SPECIMEN_LIFESPAN){
@@ -94,7 +94,7 @@ public class Game {
                 }
                 Point newLocation = Utils.add(direction, location);
                 Square newSquare = board.getSquare(newLocation);
-                if (newSquare.isWall){
+                if (newSquare.isWall) {
                     newSquare = board.getSquare(location);
                     newLocation = location;
                 }
@@ -105,7 +105,6 @@ public class Game {
                 board.addSpecimen(specimen, teleported);
             }
         }
-        board.updateSpecimen();
         return points;
     }
     public static boolean lifeExists(Board board){
@@ -135,11 +134,11 @@ public class Game {
         }
         for (int i = 0; i < numberOffspring; i++){
             List<Specimen> selectedSpecimen = new ArrayList<Specimen>(NUM_PARENTS);
-            int remainingTotal = Statistics.getTotalFitness();
+            long remainingTotal = Statistics.getTotalFitness();
             for (int j = 0; j < NUM_PARENTS; j++){
-                int countDown;
+                long countDown;
                 try {
-                    countDown = random.nextInt(remainingTotal);
+                    countDown = random.nextLong()%remainingTotal;
                 } catch (IllegalArgumentException e){
                     System.out.println(Statistics.getTotalFitness());
                     throw e;

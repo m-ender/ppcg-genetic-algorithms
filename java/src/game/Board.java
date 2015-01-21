@@ -154,6 +154,7 @@ public class Board {
         }
     }
     public void updateSpecimen(){
+
         this.specimens = this.nextSpecimens;
         this.nextSpecimens = new HashMap<Point, List<Specimen>>();
     }
