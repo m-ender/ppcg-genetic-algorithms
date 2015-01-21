@@ -149,13 +149,13 @@ public class Game {
                             continue;
                         int score = scoreSpecimen(point, specimen);
                         countDown -= score;
-                        if (countDown < 0){
+                        if (countDown <= 0){
                             selectedSpecimen.add(specimen);
                             remainingTotal -= score;
                             break;
                         }
                     }
-                    if (countDown < 0){
+                    if (countDown <= 0){
                         break;
                     }
                 }
