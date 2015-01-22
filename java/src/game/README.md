@@ -16,9 +16,7 @@ Run a game with:
 
 ### Adding your player
 
-
-TODO
-
+Add your player as a class extending `Player`, in the player folder.
 
 There are a few simple example subclasses to give you the idea of how this works.
 
