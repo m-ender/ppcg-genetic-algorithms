@@ -2,9 +2,17 @@
 
 ### Running the game
 
+Clone the repository and change directory to
 
-TODO
+    java/src
 
+then compile using the following command:
+
+    javac game/*.java game/display/*.java game/traps/*.java game/players/*.java 
+
+Run a game with:
+
+    java game/Game
 
 ### Adding your player
 
