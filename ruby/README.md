@@ -35,5 +35,4 @@ There are a few simple example subclasses to give you the idea of how this works
 The controller has been tested in **Ruby 2.0.0**, but should work with any newer version as well.
 
 
-[Genetic Algorithms PPCG Challenge]: http://meta.codegolf.stackexchange.com/questions/2140/sandbox-for-proposed-challenges/4656#4656
-
+[Genetic Algorithms PPCG Challenge]: http://codegolf.stackexchange.com/questions/44707/lab-rat-race-an-exercise-in-genetic-algorithms
