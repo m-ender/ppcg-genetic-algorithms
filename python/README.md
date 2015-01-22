@@ -42,7 +42,7 @@ The controller should work with __Python 2.6+__ and __Python 3.2+__ so you can w
 If you wish to visualise the progress you can choose a display option in `constants.py`.  About a page down, under `#Display related constants`, there are a number of import statements under the header `#Pick one of the following`. By default this will be `no_display`, but you can comment this out and uncomment one of the others instead. `tkinter_display` uses tkinter, which comes installed with most versions of python. If you have also installed pygame, you can choose `pygame_display` which will be faster. Note that `no_display` will always be fastest.
 
 
-[Genetic Algorithms PPCG Challenge]: http://meta.codegolf.stackexchange.com/questions/2140/sandbox-for-proposed-challenges/4656#4656
+[Genetic Algorithms PPCG Challenge]: http://codegolf.stackexchange.com/questions/44707/lab-rat-race-an-exercise-in-genetic-algorithms
 
 [PyPy]: http://pypy.org/
 
