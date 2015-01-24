@@ -49,5 +49,4 @@ You can close the Graphical Display once it has loaded without terminating the c
 The controller depends on C# 3.5 to compile
 
 
-[Genetic Algorithms PPCG Challenge]: http://meta.codegolf.stackexchange.com/questions/2140/sandbox-for-proposed-challenges/4656#4656
-
+[Genetic Algorithms PPCG Challenge]: http://codegolf.stackexchange.com/questions/44707/lab-rat-race-an-exercise-in-genetic-algorithms

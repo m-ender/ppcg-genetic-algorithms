@@ -15,7 +15,7 @@ Your compiler should support C++11. The controller and player can be built by co
 The player (function) to test should be set by changing the argument of `runsimulation` in the `main` function.
 
 ##Multithreading
-Multithreading support can be enabled by setting `USE_MULTITHREADING` to 1 in `magicnum.h`. The number of threads can be controlled by `N_THREADS`. Hopefully, it works correctly. Diagnostic output is not sychronized, so some messages may be interleaved.
+Multithreading support can be enabled by setting `USE_MULTITHREADING` to 1 in `magicnum.h`. The number of threads can be controlled by `N_THREADS`. Hopefully, it works correctly.
 
 If you enable multithreading, you should not use the C library's `rand()` function, which is not thread-safe. The `view_t` class has a member `rng` with a few random functions which may be used for convenience. `rng.rint(n)` gives a random number from 0 to n-1 inclusive. `rng.rint(a,b)` gives one between a and b inclusive. `rng.rndouble()` is a double between 0 and 1.
 
