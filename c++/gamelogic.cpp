@@ -418,6 +418,24 @@ color_t view_t::operator() (int x, int y) {
 }
 
 
+
+
+
+
+struct temp_score_t {
+std::vector<int> scores;
+double add(int s)
+{
+    scores.push_back(s);
+    double sum = 0;
+    for (int s : scores) sum += log(s);
+    return exp(sum / scores.size());
+}
+}; 
+
+
+
+
 int rungame(player_t player, ull seed) {
     board_t b(player, seed);
     for(int i = 0; i < GAME_DURATION; i++) {
@@ -440,10 +458,15 @@ ull makeseed(int i) {
     return i ^ std::chrono::high_resolution_clock().now().time_since_epoch().count();
 #endif
 }
+
+
+
+
 double runsimulation(player_t player) {
     int scores[N_GAMES];
+    temp_score_t temp_score;
 #if USE_MULTITHREADING
-    volatile int i = 0;
+    std::atomic<int> i = 0;
     std::thread threads[N_THREADS];
     std::mutex mu;
     for(int t = 0; t < N_THREADS; t++) {
@@ -456,9 +479,17 @@ double runsimulation(player_t player) {
                 }
                 int myi = i++;
                 mu.unlock();
+                
+                int sc = rungame(player, makeseed(myi));
+                
+                mu.lock();
+                double mean = temp_score.add(sc);
+                mu.unlock();
+                scores[myi] = sc;
+                slog << "Scored " << sc << " in game " << myi << ". Current mean = " << mean << slog_flush;
                 int sc = rungame(player, makeseed(myi));
                 scores[myi] = sc;
-                slog << "Scored " << sc << " in game " << myi << '\n';
+                slog << "Scored " << sc << " in game " << myi << slog_flush;
             }
         });
     }
@@ -467,8 +498,10 @@ double runsimulation(player_t player) {
     }
 #else
     for(int i = 0; i < N_GAMES; i++) {
-        scores[i] = rungame(player, makeseed(i));
-        slog << "Scored " << scores[i] << " in game " << i << '\n';
+        int sc = rungame(player, makeseed(i));
+        scores[i] = sc;
+        double mean = temp_score.add(sc);
+        slog << "Scored " << sc << " in game " << i << ". Current mean = " << mean << slog_flush;
     }
 #endif
     double sum = 0;

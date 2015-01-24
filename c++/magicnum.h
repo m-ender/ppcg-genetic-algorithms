@@ -40,5 +40,41 @@ const int N_TURNS_PRINTINFO = 2500;
 const bool PRINT_SQUARE_INFO = true,
            PRINT_GRID = false,
            PRINT_X = false;
+
+#if USE_MULTITHREADING
+#include <sstream>
+#if defined (_MSC_VER)
+#define thread_local __declspec( thread )
+#elif defined (__GCC__)
+#define thread_local __thread
+#endif
+
+class logger {
+
+public:
+    logger(std::ostream & out) : out(out) {}
+    ~logger() { flush(); }
+    struct dummy {};
+    void init(void) const { if (line == nullptr) line = new std::ostringstream; }
+    template <typename T> logger& operator << (const T & data)   { init(); *line << data; return *this; }
+
+    logger& operator << (const dummy & data) { init(); *line << "HELLO"; *line << std::endl;  flush(); return *this;}
+    static dummy endl;
+
+private:
+    std::ostream & out;
+    static thread_local std::ostringstream * line;
+    void flush(void) { if (line == nullptr) return; out << line->str(); line->str(""); }
+};
+
+thread_local std::ostringstream * logger::line = nullptr;
+logger::dummy logger::endl;
+
+logger slog (std::cout);
+logger::dummy slog_flush = logger::endl;
+
+#else // single thread
 std::ostream &slog = std::clog;
+#define slog_flush std::endl
+#endif // USE_MULTITHREADING
 
