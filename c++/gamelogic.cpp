@@ -431,7 +431,7 @@ double add(int s)
     for (int s : scores) sum += log(s);
     return exp(sum / scores.size());
 }
-}; 
+};
 
 
 
@@ -466,7 +466,7 @@ double runsimulation(player_t player) {
     int scores[N_GAMES];
     temp_score_t temp_score;
 #if USE_MULTITHREADING
-    std::atomic<int> i = 0;
+    std::atomic<int> i(0);
     std::thread threads[N_THREADS];
     std::mutex mu;
     for(int t = 0; t < N_THREADS; t++) {
@@ -487,9 +487,6 @@ double runsimulation(player_t player) {
                 mu.unlock();
                 scores[myi] = sc;
                 slog << "Scored " << sc << " in game " << myi << ". Current mean = " << mean << slog_flush;
-                int sc = rungame(player, makeseed(myi));
-                scores[myi] = sc;
-                slog << "Scored " << sc << " in game " << myi << slog_flush;
             }
         });
     }

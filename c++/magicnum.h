@@ -43,6 +43,7 @@ const bool PRINT_SQUARE_INFO = true,
 
 #if USE_MULTITHREADING
 #include <sstream>
+#include <atomic>
 #if defined (_MSC_VER)
 #define thread_local __declspec( thread )
 #elif defined (__GCC__)
@@ -58,7 +59,7 @@ public:
     void init(void) const { if (line == nullptr) line = new std::ostringstream; }
     template <typename T> logger& operator << (const T & data)   { init(); *line << data; return *this; }
 
-    logger& operator << (const dummy & data) { init(); *line << "HELLO"; *line << std::endl;  flush(); return *this;}
+    logger& operator << (const dummy & data) { init(); *line << std::endl;  flush(); return *this;}
     static dummy endl;
 
 private:
