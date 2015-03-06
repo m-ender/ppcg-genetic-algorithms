@@ -247,7 +247,7 @@ class board_t {
     unsigned calcsolvability() {
         spawnY.clear();
         for(int y0 = 1; y0 <= GRID_Y; y0++) {
-            bool seen[GRID_X][GRID_Y] = {};
+            bool seen[GRID_X+1][GRID_Y+1] = {};
             std::vector<coord_t> q;
             seen[1][y0] = true;
             q.push_back({1, y0});
